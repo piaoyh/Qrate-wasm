@@ -1,0 +1,37 @@
+[package]
+authors = ["PARK Youngho"]
+name = "qrate-wasm"
+version = "0.1.0"
+edition = "2024"
+keywords = ["quiz", "gui", "examination", "question", "teacher"]
+categories = ["algorithms", "data-structures", "database", "gui"]
+description = "A GUI examination generator WASM library for Chrome examination, which wraps the crate qrate and provides interface for generating different quiz sets for all students so that each student may have a different quiz set from the quiz sets of the others."
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/piaoyh/qrate-wasm"
+
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+qrate = { path = "/home/youngho/dacha/AI-assisted/Qrate" } #"0.6"
+wasm-bindgen = "0.2"
+getrandom = { version = "0.4", features = ["wasm_js"] }
+#lopdf = "0.31.0"
+#time = "0.3.36"
+
+#[patch.crates-io]
+#lopdf = { git = "https://github.com/J-F-Liu/lopdf" }#, tag = "0.31.0"
+#time = { git = "https://github.com/time-rs/time", tag = "v0.3.36" }
+#lopdf = { version = "0.40.0" }
+#time = { version = "0.3.36" }
+
+[package.metadata.docs.rs]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+    "i686-unknown-linux-gnu",
+    "i686-pc-windows-msvc"
+]
