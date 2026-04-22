@@ -6,10 +6,11 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use qrate::qbank::QBank;
-use qrate::sbank::SBank;
-use qrate::generator::Generator;
+
 use wasm_bindgen::prelude::*;
+use qrate::{ QBank, SBank };
+use qrate::generator::Generator;
+use crate::{ LoadFile, ErrorMessage };
 
 #[wasm_bindgen]
 pub struct ControlTower
@@ -33,15 +34,18 @@ impl ControlTower
         }
     }
 
-    pub fn set_qbank_from_bytes(&mut self, _data: &[u8], _extension: &str) -> Result<(), String>
+    #[inline]
+    pub fn set_qbank_from_bytes(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
-        // TODO: Implement byte-based QBank loading
+        let qbank = LoadFile::load_qbank_from_bytes(data)?;
+        self.qbank = Some(qbank);
         Ok(())
     }
 
-    pub fn set_sbank_from_bytes(&mut self, _data: &[u8], _extension: &str) -> Result<(), String>
+    pub fn set_sbank_from_bytes(&mut self, _data: &[u8]) -> Result<(), ErrorMessage>
     {
-        // TODO: Implement byte-based SBank loading
+        let qbank = LoadFile::load_sbank_from_bytes(data)?;
+        self.sbank = Some(sbank);
         Ok(())
     }
 

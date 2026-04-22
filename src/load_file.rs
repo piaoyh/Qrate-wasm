@@ -6,22 +6,39 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use qrate::qbank::QBank;
-use qrate::sbank::SBank;
+use qrate::{ SQLiteDB, QBank, SBank, ErrorMessage, SBDB };
 
 pub struct LoadFile;
 
 impl LoadFile
 {
-    pub async fn load_qbank_from_bytes(data: &[u8], extension: &str) -> Result<QBank, String>
+    pub async fn load_qbank_from_bytes(data: &[u8]) -> Result<QBank, ErrorMessage>
     {
-        // TODO: Implement byte-based QBank loading
-        Err("Not implemented".into())
+        if let Some(db) = SQLiteDB::open_in_memory(data)
+        {
+            if let Some(qb) = db.read_qbank()
+                { Ok(qb) }
+            else
+                { Err(ErrorMessage::FailedToOpenQBank) }
+        }
+        else
+        {
+            Err(ErrorMessage::FailedToOpenQBank)
+        }
     }
 
-    pub async fn load_sbank_from_bytes(data: &[u8], extension: &str) -> Result<SBank, String>
+    pub async fn load_sbank_from_bytes(data: &[u8], extension: &str) -> Result<SBank, ErrorMessage>
     {
-        // TODO: Implement byte-based SBank loading
-        Err("Not implemented".into())
+        if let Some(db) = SQLiteDB::open_in_memory(data)
+        {
+            if let Some(qb) = db.read_sbank()
+                { Ok(qb) }
+            else
+                { Err(ErrorMessage::FailedToOpenSBank) }
+        }
+        else
+        {
+            Err(ErrorMessage::FailedToOpenSBank)
+        }
     }
 }

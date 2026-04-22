@@ -12,19 +12,13 @@ repository = "https://github.com/piaoyh/qrate-wasm"
 
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 qrate = { path = "../Qrate" } #"0.6"
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
-#lopdf = "0.31.0"
-#time = "0.3.36"
 
-[patch.crates-io]
-# printpdf = { path = "../Qrate/libs/printpdf", version = "0.7.0" }
-lopdf = { git = "https://github.com/J-F-Liu/lopdf" }
-time = { git = "https://github.com/time-rs/time" }
 
 [package.metadata.docs.rs]
 targets = [

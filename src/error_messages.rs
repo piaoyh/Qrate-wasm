@@ -6,18 +6,10 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 
-pub mod control_tower;
-pub mod load_file;
-pub mod error_messages;
-
-pub use control_tower::ControlTower;
-pub use load_file::LoadFile;
-pub use error_messages::ErrorMessage;
-
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
-pub fn generate_exam_wasm(input_data: &str) -> String
+pub enum ErrorMessage
 {
-    format!("Generated Exam {}", input_data)
+    FailedToOpenQBank,
+    FailedToOpenSBank,
+    FailedToOpenQExcel,
+    FailedToOpenSExcel,
 }
