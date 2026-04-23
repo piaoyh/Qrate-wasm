@@ -12,10 +12,11 @@ repository = "https://github.com/piaoyh/qrate-wasm"
 
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-qrate = { path = "../Qrate" } #"0.6"
+qrate = { path = "../Qrate" }
+# qrate = "0.6"
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 

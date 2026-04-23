@@ -6,10 +6,16 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 
+
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 pub enum ErrorMessage
 {
     FailedToOpenQBank,
     FailedToOpenSBank,
     FailedToOpenQExcel,
     FailedToOpenSExcel,
+    FailedToRecevieQBankFromMemory,
+    FailedToRecevieSBankFromMemory,
 }

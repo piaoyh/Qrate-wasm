@@ -34,19 +34,30 @@ impl ControlTower
         }
     }
 
-    #[inline]
     pub fn set_qbank_from_bytes(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
-        let qbank = LoadFile::load_qbank_from_bytes(data)?;
-        self.qbank = Some(qbank);
-        Ok(())
+        let loaded = LoadFile::load_qbank_from_bytes(data);
+        match loaded
+        {
+            Ok(qbank) => {
+                self.qbank = Some(qbank);
+                Ok(())
+            },
+            Err(e) => Err(e)
+        }
     }
 
-    pub fn set_sbank_from_bytes(&mut self, _data: &[u8]) -> Result<(), ErrorMessage>
+    pub fn set_sbank_from_bytes(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
-        let qbank = LoadFile::load_sbank_from_bytes(data)?;
-        self.sbank = Some(sbank);
-        Ok(())
+        let loaded = LoadFile::load_sbank_from_bytes(data);
+        match loaded
+        {
+            Ok(sbank) => {
+                self.sbank = Some(sbank);
+                Ok(())
+            },
+            Err(e) => Err(e)
+        }
     }
 
     pub fn generate_pdf(&self) -> Result<Vec<u8>, String>
@@ -60,5 +71,34 @@ impl ControlTower
         {
             Err("QBank or SBank not loaded".to_string())
         }
+    }
+
+    pub fn get_question_length(&self) -> usize
+    {
+        match &self.qbank
+        {
+            Some(q) => q.get_length(),
+            None => 0
+        }
+    }
+
+    pub fn get_question(&self, question_number: usize) -> String
+    {
+        match &self.qbank
+        {
+            Some(q) => {
+                match q.get_question(question_number)
+                {
+                    Some(question) => question.get_question().clone(),
+                    None => String::new()
+                }
+            },
+            None => String::new()
+        }
+    }
+
+    pub fn get_choices_length(&self) -> usize
+    {
+        
     }
 }

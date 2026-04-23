@@ -6,39 +6,41 @@
 // This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use qrate::{ SQLiteDB, QBank, SBank, ErrorMessage, SBDB };
+
+use qrate::{ SQLiteDB, QBank, SBank, QBDB, SBDB };
+use crate::ErrorMessage;
 
 pub struct LoadFile;
 
 impl LoadFile
 {
-    pub async fn load_qbank_from_bytes(data: &[u8]) -> Result<QBank, ErrorMessage>
+    pub fn load_qbank_from_bytes(data: &[u8]) -> Result<QBank, ErrorMessage>
     {
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             if let Some(qb) = db.read_qbank()
                 { Ok(qb) }
             else
-                { Err(ErrorMessage::FailedToOpenQBank) }
+                { Err(ErrorMessage::FailedToRecevieQBankFromMemory) }
         }
         else
         {
-            Err(ErrorMessage::FailedToOpenQBank)
+            Err(ErrorMessage::FailedToRecevieQBankFromMemory)
         }
     }
 
-    pub async fn load_sbank_from_bytes(data: &[u8], extension: &str) -> Result<SBank, ErrorMessage>
+    pub fn load_sbank_from_bytes(data: &[u8]) -> Result<SBank, ErrorMessage>
     {
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             if let Some(qb) = db.read_sbank()
                 { Ok(qb) }
             else
-                { Err(ErrorMessage::FailedToOpenSBank) }
+                { Err(ErrorMessage::FailedToRecevieSBankFromMemory) }
         }
         else
         {
-            Err(ErrorMessage::FailedToOpenSBank)
+            Err(ErrorMessage::FailedToRecevieSBankFromMemory)
         }
     }
 }
