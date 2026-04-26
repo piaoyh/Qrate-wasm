@@ -8,13 +8,16 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ QBank, SBank };
+use qrate::{ SQLiteDB, QBank, SBank, QBDB, SBDB };
 use qrate::generator::Generator;
-use crate::{ LoadFile, ErrorMessage };
+use crate::{ AbstractDB, ErrorMessage };
+
+
 
 #[wasm_bindgen]
 pub struct ControlTower
 {
+    db: AbstractDB,
     qbank: Option<QBank>,
     sbank: Option<SBank>,
     generator: Option<Generator>,
@@ -28,6 +31,7 @@ impl ControlTower
     {
         ControlTower
         {
+            db: AbstractDB::None,
             qbank: None,
             sbank: None,
             generator: None,
@@ -36,28 +40,30 @@ impl ControlTower
 
     pub fn set_qbank_from_bytes(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
-        let loaded = LoadFile::load_qbank_from_bytes(data);
-        match loaded
+        if let Some(db) = SQLiteDB::open_in_memory(data)
         {
-            Ok(qbank) => {
-                self.qbank = Some(qbank);
-                Ok(())
-            },
-            Err(e) => Err(e)
+            self.qbank = db.read_qbank();
+            if self.qbank.is_some()
+            {
+                self.db = AbstractDB::SQLite(db);
+                return Ok(());
+            }
         }
+        Err(ErrorMessage::FailedToRecevieQBankFromMemory)
     }
 
     pub fn set_sbank_from_bytes(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
-        let loaded = LoadFile::load_sbank_from_bytes(data);
-        match loaded
+        if let Some(db) = SQLiteDB::open_in_memory(data)
         {
-            Ok(sbank) => {
-                self.sbank = Some(sbank);
-                Ok(())
-            },
-            Err(e) => Err(e)
+            self.sbank = db.read_sbank();
+            if self.sbank.is_some()
+            {
+                self.db = AbstractDB::SQLite(db);
+                return Ok(());
+            }
         }
+        Err(ErrorMessage::FailedToRecevieSBankFromMemory)
     }
 
     pub fn generate_pdf(&self) -> Result<Vec<u8>, String>
@@ -77,7 +83,7 @@ impl ControlTower
     {
         match &self.qbank
         {
-            Some(q) => q.get_length(),
+            Some(qbank) => qbank.get_length(),
             None => 0
         }
     }
@@ -86,8 +92,8 @@ impl ControlTower
     {
         match &self.qbank
         {
-            Some(q) => {
-                match q.get_question(question_number)
+            Some(qbank) => {
+                match qbank.get_question(question_number)
                 {
                     Some(question) => question.get_question().clone(),
                     None => String::new()
@@ -97,8 +103,12 @@ impl ControlTower
         }
     }
 
-    pub fn get_choices_length(&self) -> usize
+    pub fn get_choices_length(&self, question_number: usize) -> usize
     {
-        
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_choices_length(question_number),
+            None => 0
+        }
     }
 }
