@@ -9,10 +9,12 @@
 pub mod control_tower;
 pub mod error_messages;
 pub mod abstract_db;
+pub mod choice_answer;
 
 pub use control_tower::ControlTower;
 pub use error_messages::ErrorMessage;
 pub use abstract_db::AbstractDB;
+pub use choice_answer::ChoiceAnswer;
 
 use wasm_bindgen::prelude::*;
 
