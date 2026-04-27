@@ -38,6 +38,7 @@ impl ChoiceAnswer
     /// assert_eq!(choice.text, "Option A");
     /// assert!(choice.is_correct);
     /// ```
+    #[wasm_bindgen(constructor)]
     pub fn new(text: String, is_correct: bool) -> Self
     {
         Self { text, is_correct }

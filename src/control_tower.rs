@@ -8,9 +8,9 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ SQLiteDB, QBank, SBank, QBDB, SBDB };
+use qrate::{ SQLiteDB, Student, QBank, SBank, QBDB, SBDB, SBankHelper };
 use qrate::generator::Generator;
-use crate::{ AbstractDB, ChoiceAnswer, ErrorMessage, choice_answer };
+use crate::{ AbstractDB, ChoiceAnswer, NameId, ErrorMessage };
 
 
 
@@ -153,6 +153,42 @@ impl ControlTower
         Err(ErrorMessage::FailedToRecevieSBankFromMemory)
     }
 
+    // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    /// Writes the question bank (QBank) to a byte vector containing SQLite
+    /// database data.
+    /// 
+    /// This method creates an in-memory SQLite database, writes the QBank to it,
+    /// and then saves the database to a byte vector.
+    /// 
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the SQLite database data on success
+    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.write_qbank_to_bytes_in_sqlite()
+    /// {
+    ///     Ok(data) => println!("QBank written to bytes successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to write QBank to bytes: {:?}", e),
+    /// }
+    /// ```
+    pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    {
+        if let Some(sbank) = &self.sbank
+        {
+            if let Some(mut db) = SQLiteDB::open_empty_in_memory()
+            {
+                if db.write_sbank(sbank).is_ok()
+                {
+                    return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteSBankToMemory);
+                }
+            }
+        }
+        Err(ErrorMessage::FailedToWriteSBankToMemory)
+    }
+
     pub fn generate_pdf(&self) -> Result<Vec<u8>, String>
     {
         if let (Some(_qbank), Some(_sbank)) = (&self.qbank, &self.sbank)
@@ -251,12 +287,12 @@ impl ControlTower
     /// // After loading a QBank with a question at index 0
     /// // assert_eq!(control_tower.set_question(1, "What is 2+2?".to_string()), true);
     /// ```
-    pub fn set_question(&self, question_number: usize, txt: String) -> bool
+    pub fn set_question(&mut self, question_number: usize, txt: String) -> bool
     {
-        match &self.qbank
+        match &mut self.qbank
         {
             Some(qbank) => {
-                match qbank.get_question(question_number)
+                match qbank.get_question_mut(question_number)
                 {
                     Some(question) => {
                         question.set_question(txt);
@@ -343,7 +379,7 @@ impl ControlTower
         }
     }
 
-    // pub fn set_choice(&self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswe) -> bool
+    // pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswe) -> bool
     /// Sets the text and correctness flag of a specific choice for a given question number
     /// in the QBank.
     /// 
@@ -370,9 +406,9 @@ impl ControlTower
     /// // After loading a QBank with a question at index 0 that has a choice at index 0
     /// // assert_eq!(control_tower.set_choice(1, 1, ChoiceAnswer::new("4".to_string(), true)), true);
     /// ```
-    pub fn set_choice(&self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswe) -> bool
+    pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswer) -> bool
     {
-        match &self.qbank
+        match &mut self.qbank
         {
             Some(qbank) => qbank.set_choice(question_number, choice_number, (choice_answer.get_text(), choice_answer.is_correct())),
             None => false
@@ -410,7 +446,7 @@ impl ControlTower
         }
     }
 
-    // pub fn set_group(&self, question_number: usize, group: u16) -> bool
+    // pub fn set_group(&mut self, question_number: usize, group: u16) -> bool
     /// Sets the group number for a given question number in the QBank.
     /// 
     /// If the QBank is not loaded or the question number is out of bounds,
@@ -432,11 +468,163 @@ impl ControlTower
     /// // After loading a QBank with a question at index 0
     /// // assert_eq!(control_tower.set_group(1, 1), true);
     /// ```
-    pub fn set_group(&self, question_number: usize, group: u16) -> bool
+    pub fn set_group(&mut self, question_number: usize, group: u16) -> bool
     {
-        match &self.qbank
+        match &mut self.qbank
         {
             Some(qbank) => qbank.set_group(question_number, group),
+            None => false
+        }
+    }
+
+    // pub fn get_student_length(&self) -> usize
+    /// Retrieves the number of students in the student bank (SBank).
+    /// 
+    /// If the SBank is not loaded, it returns 0.
+    /// 
+    /// # Returns
+    /// - The number of students in the SBank if it is loaded and has students.
+    /// - `0` if the SBank has no students or is not loaded.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_student_length(), 0);
+    /// // After loading an SBank with 30 students
+    /// // assert_eq!(control_tower.get_student_length(), 30);
+    /// ```
+    pub fn get_student_length(&self) -> usize
+    {
+        match &self.sbank
+        {
+            Some(sbank) => sbank.get_length(),
+            None => 0
+        }
+    }
+
+    // pub fn get_student(&self, student_number: usize) -> NameId
+    /// Retrieves the name and ID of a student by their 1-based index from the SBank.
+    /// 
+    /// If the SBank is not loaded or the student number is out of bounds,
+    /// it returns a tuple of two empty strings.
+    /// 
+    /// # Arguments
+    /// * `student_number` - The 1-based index of the student to retrieve.
+    /// 
+    /// # Returns
+    /// - A tuple containing the name and ID of the student if the SBank is
+    ///   loaded and the student number is valid.
+    /// - A tuple of two empty strings if the SBank is not loaded or the student
+    ///   number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_student(1), NameId::new(String::new(), String::new()));
+    /// // After loading an SBank with a student at index 0 with name "Alice" and ID "s123"
+    /// // assert_eq!(control_tower.get_student(1), NameId::new("Alice".to_string(), "s123".to_string()));
+    /// ```
+    pub fn get_student(&self, student_number: usize) -> NameId
+    {
+        match &self.sbank
+        {
+            Some(sbank) => {
+                if let Some(student) = sbank.get_student(student_number)
+                {
+                    NameId::new(student.get_name(), student.get_id())
+                }
+                else
+                {
+                    NameId::new_empty()
+                }
+            },
+            None => NameId::new_empty()
+        }
+    }
+
+    // pub fn set_student(&self, student_number: usize, name_id: NameId) -> bool
+    /// Sets the name and ID of a student by their 1-based index in the SBank.
+    /// 
+    /// If the SBank is not loaded or the student number is out of bounds,
+    /// it returns `false`. Otherwise, it updates the student's name and ID and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `student_number` - The 1-based index of the student to set.
+    /// * `name_id` - A `NameId` containing the new name and ID for the student.
+    /// 
+    /// # Returns
+    /// - `true` if the student's name and ID were successfully updated.
+    /// - `false` if the SBank is not loaded or the student number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.set_student(1, NameId::new("Alice".to_string(), "s123".to_string())), false);
+    /// // After loading an SBank with a student at index 0
+    /// // assert_eq!(control_tower.set_student(1, NameId::new("Alice".to_string(), "s123".to_string())), true);
+    /// ```
+    pub fn set_student(&mut self, student_number: usize, name_id: NameId) -> bool
+    {
+        match &mut self.sbank
+        {
+            Some(sbank) => sbank.set_student(student_number, Student::new(name_id.get_name(), name_id.get_id())),
+            None => false
+        }
+    }
+
+    // pub fn push_student(&mut self, name_id: NameId)
+    /// Adds a new student to the end of the SBank using the provided `NameId`.
+    /// 
+    /// If the SBank is not loaded, this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `name_id` - A `NameId` containing the name and ID of the student to add.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.push_student(NameId::new("Alice".to_string(), "s123".to_string()));
+    /// // After loading an SBank, the student "Alice" with ID "s123" should be added to the end of the SBank.
+    /// ```
+    pub fn push_student(&mut self, name_id: NameId)
+    {
+        match &mut self.sbank
+        {
+            Some(sbank) => sbank.push_student(Student::new(name_id.get_name(), name_id.get_id())),
+            None => {}
+        }
+    }
+
+    // pub fn remove_student(&mut self, student_number: usize) -> bool
+    /// Removes a student from the SBank by their 1-based index.
+    /// 
+    /// If the SBank is not loaded or the student number is out of bounds,
+    /// it returns `false`. Otherwise, it removes the student and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `student_number` - The 1-based index of the student to remove.
+    /// 
+    /// # Returns
+    /// - `true` if the student was successfully removed.
+    /// - `false` if the SBank is not loaded or the student number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.remove_student(1), false);
+    /// // After loading an SBank with a student at index 0
+    /// // assert_eq!(control_tower.remove_student(1), true);
+    /// ```
+    pub fn remove_student(&mut self, student_number: usize) -> bool
+    {
+        match &mut self.sbank
+        {
+            Some(sbank) => sbank.remove_student(student_number),
             None => false
         }
     }

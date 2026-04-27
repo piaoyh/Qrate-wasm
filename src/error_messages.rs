@@ -18,4 +18,6 @@ pub enum ErrorMessage
     FailedToOpenSExcel,
     FailedToRecevieQBankFromMemory,
     FailedToRecevieSBankFromMemory,
+    FailedToWriteQBankToMemory,
+    FailedToWriteSBankToMemory
 }
