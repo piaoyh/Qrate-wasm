@@ -9,7 +9,7 @@
 
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
-            Student, Question, ChoiceAnswer, Generator };
+            Student, Question, Generator };
 use crate::{ AbstractDB, ChoiceMark, NameId, ErrorMessage };
 
 
@@ -665,6 +665,27 @@ impl ControlTower
         }
     }
 
+    // pub fn remove_question(&mut self, question_number: usize) -> bool
+    /// Removes a question from the QBank by its 1-based index.
+    /// 
+    /// If the QBank is not loaded or the question number is out of bounds,
+    /// it returns `false`. Otherwise, it removes the question and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The 1-based index of the question to remove.
+    /// 
+    /// # Returns
+    /// - `true` if the question was successfully removed.
+    /// - `false` if the QBank is not loaded or the question number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.remove_question(1), false);
+    /// // After loading a QBank with a question at index 0
+    /// // assert_eq!(control_tower.remove_question(1), true);
+    /// ```
     pub fn remove_question(&mut self, question_number: usize) -> bool
     {
         match &mut self.qbank
@@ -672,6 +693,25 @@ impl ControlTower
             Some(qbank) => qbank.remove_question(question_number),
             None => false
         }
+    }
+
+    // pub fn optimize_qbank(&mut self)
+    /// Optimizes the question bank (QBank) by calling its `optimize` method.
+    /// 
+    /// If the QBank is not loaded, this method does nothing.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.optimize_qbank();
+    /// // After loading a QBank, it will be optimized
+    /// control_tower.optimize_qbank();
+    /// ```
+    pub fn optimize_qbank(&mut self)
+    {
+        if let Some(qbank) = &mut self.qbank
+            { qbank.optimize(); }
     }
 
     // pub fn get_student_length(&self) -> usize
