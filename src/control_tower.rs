@@ -119,7 +119,7 @@ impl ControlTower
     /// 
     /// # Arguments
     /// * `data` - A byte slice containing the SQLite database data
-    ///  for the student bank
+    ///   for the student bank
     /// 
     /// # Returns
     /// - `Ok(())` on success
@@ -214,10 +214,14 @@ impl ControlTower
     /// ```
     pub fn push_an_empty_question(&mut self)
     {
-        let question = Question::new_empty();
+        let mut question = Question::new_empty();
         match &mut self.qbank
         {
-            Some(qbank) => qbank.push_question(question),
+            Some(qbank) => {
+                let id = qbank.get_length() + 1; // Assuming question numbers are 1-based
+                question.set_id(id as u16); // Set the question ID to the new question number
+                qbank.push_question(question);
+            },
             None => ()
         }
     }
