@@ -11,7 +11,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct ChoiceAnswer
+pub struct ChoiceMark
 {
     text: String,
     is_correct: bool,
@@ -19,7 +19,7 @@ pub struct ChoiceAnswer
 
 
 #[wasm_bindgen]
-impl ChoiceAnswer
+impl ChoiceMark
 {
     // pub fn new(text: String, is_correct: bool) -> Self
     /// Creates a new `ChoiceAnswer` instance.

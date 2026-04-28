@@ -10,7 +10,7 @@
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
             Student, Question, ChoiceAnswer, Generator };
-use crate::{ AbstractDB, ChoiceAnswer, NameId, ErrorMessage };
+use crate::{ AbstractDB, ChoiceMark, NameId, ErrorMessage };
 
 
 
@@ -389,12 +389,12 @@ impl ControlTower
         }
     }
 
-    // pub fn get_choice(&self, question_number: usize, choice_number: usize) -> ChoiceAnswer
+    // pub fn get_choice(&self, question_number: usize, choice_number: usize) -> ChoiceMark
     /// Retrieves the text of a specific choice for a given question number
     /// from the QBank.
     ///
     ///  If the QBank is not loaded, the question number is out of bounds,
-    ///  or the choice number is out of bounds, it returns a `ChoiceAnswer`
+    ///  or the choice number is out of bounds, it returns a `ChoiceMark`
     /// instance with an empty text and `false` correctness flag.
     /// 
     /// # Arguments
@@ -402,37 +402,37 @@ impl ControlTower
     /// * `choice_number` - The index of the choice to retrieve (1-based).
     /// 
     /// # Returns
-    /// A `ChoiceAnswer` instance containing the text and correctness flag of
+    /// A `ChoiceMark` instance containing the text and correctness flag of
     /// the specified choice.
     /// - If the QBank is not loaded, the question number is invalid,
     ///   or the choice number is invalid,
-    ///   it returns a `ChoiceAnswer` instance with an empty text and
+    ///   it returns a `ChoiceMark` instance with an empty text and
     ///   `false` correctness flag.
     /// 
     /// # Examples
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// assert_eq!(control_tower.get_choice(1, 1), ChoiceAnswer::new(String::new(), false));
+    /// assert_eq!(control_tower.get_choice(1, 1), ChoiceMark::new(String::new(), false));
     /// // After loading a QBank with a question at index 0 that has a choice at index 0 with text "4"
-    /// // assert_eq!(control_tower.get_choice(1, 1), ChoiceAnswer::new("4".to_string(), true));
+    /// // assert_eq!(control_tower.get_choice(1, 1), ChoiceMark::new("4".to_string(), true));
     /// ```
-    pub fn get_choice(&self, question_number: usize, choice_number: usize) -> ChoiceAnswer
+    pub fn get_choice(&self, question_number: usize, choice_number: usize) -> ChoiceMark
     {
         match &self.qbank
         {
             Some(qbank) => {
                 match qbank.get_choice(question_number, choice_number)
                 {
-                    Some(choice) => { ChoiceAnswer::new(choice.0.clone(), choice.1) }
-                    None => ChoiceAnswer::new(String::new(), false)
+                    Some(choice) => { ChoiceMark::new(choice.0.clone(), choice.1) }
+                    None => ChoiceMark::new(String::new(), false)
                 }
             },
-            None => ChoiceAnswer::new(String::new(), false)
+            None => ChoiceMark::new(String::new(), false)
         }
     }
 
-    // pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswe) -> bool
+    // pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceMark) -> bool
     /// Sets the text and correctness flag of a specific choice for a given question number
     /// in the QBank.
     /// 
@@ -443,7 +443,7 @@ impl ControlTower
     /// # Arguments
     /// * `question_number` - The index of the question to set the choice for (1-based).
     /// * `choice_number` - The index of the choice to set (1-based).
-    /// * `choice_answer` - A `ChoiceAnswer` instance containing the new text
+    /// * `choice_answer` - A `ChoiceMark` instance containing the new text
     ///   and correctness flag for the specified choice.
     /// 
     /// # Returns
@@ -455,11 +455,11 @@ impl ControlTower
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// assert_eq!(control_tower.set_choice(1, 1, ChoiceAnswer::new("4".to_string(), true)), false);
+    /// assert_eq!(control_tower.set_choice(1, 1, ChoiceMark::new("4".to_string(), true)), false);
     /// // After loading a QBank with a question at index 0 that has a choice at index 0
-    /// // assert_eq!(control_tower.set_choice(1, 1, ChoiceAnswer::new("4".to_string(), true)), true);
+    /// // assert_eq!(control_tower.set_choice(1, 1, ChoiceMark::new("4".to_string(), true)), true);
     /// ```
-    pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceAnswer) -> bool
+    pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceMark) -> bool
     {
         match &mut self.qbank
         {

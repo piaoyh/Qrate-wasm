@@ -9,13 +9,13 @@
 pub mod control_tower;
 pub mod error_messages;
 pub mod abstract_db;
-pub mod choice_answer;
+pub mod choice_mark;
 pub mod name_id;
 
 pub use control_tower::ControlTower;
 pub use error_messages::ErrorMessage;
 pub use abstract_db::AbstractDB;
-pub use choice_answer::ChoiceAnswer;
+pub use choice_mark::ChoiceMark;
 pub use name_id::NameId;
 
 use wasm_bindgen::prelude::*;
