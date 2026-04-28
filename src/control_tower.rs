@@ -8,8 +8,8 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ SQLiteDB, Student, QBank, SBank, QBDB, SBDB, SBankHelper };
-use qrate::generator::Generator;
+use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
+            Student, Question, ChoiceAnswer, Generator };
 use crate::{ AbstractDB, ChoiceAnswer, NameId, ErrorMessage };
 
 
@@ -199,6 +199,59 @@ impl ControlTower
         else
         {
             Err("QBank or SBank not loaded".to_string())
+        }
+    }
+
+    // pub fn push_an_empty_question(&mut self)
+    /// Pushes an empty question to the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.push_an_empty_question();
+    /// assert_eq!(control_tower.get_question_length(), 1);
+    /// ```
+    pub fn push_an_empty_question(&mut self)
+    {
+        let question = Question::new_empty();
+        match &mut self.qbank
+        {
+            Some(qbank) => qbank.push_question(question),
+            None => ()
+        }
+    }
+
+    // pub fn determine_category(&mut self, question_number: usize) -> bool
+    /// Determines the category for a given question number in the QBank.
+    /// 
+    /// This method uses the `determine_category` function of the QBank to
+    /// determine the category for the specified question.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The 1-based index of the question for which to determine the category.
+    /// 
+    /// # Returns
+    /// * `true` if the category was successfully determined and set.
+    /// * `false` if the question number is out of bounds or the QBank is not loaded.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.push_an_empty_question();
+    /// control_tower.determine_category(1);
+    /// assert!(control_tower.get_category(1), 4);
+    /// ```
+    pub fn determine_category(&mut self, question_number: usize) -> bool
+    {
+        if let Some(qbank) = &mut self.qbank
+        {
+            qbank.determine_category(question_number)
+        }
+        else
+        {
+            false
         }
     }
 
@@ -415,6 +468,38 @@ impl ControlTower
         }
     }
 
+    // pub fn push_choice(&mut self, question_number: usize, choice: String, answer: bool) -> bool
+    /// Adds a new choice to a specific question in the QBank.
+    /// 
+    /// If the QBank is not loaded or the question number is out of bounds,
+    /// it returns `false`. Otherwise, it adds the choice and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The index of the question to add the choice to (1-based).
+    /// * `choice` - The text of the new choice.
+    /// * `answer` - The correctness flag for the new choice.
+    /// 
+    /// # Returns
+    /// - `true` if the choice was successfully added.
+    /// - `false` if the QBank is not loaded or the question number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.push_choice(1, "4".to_string(), true), false);
+    /// // After loading a QBank with a question at index 0
+    /// // assert_eq!(control_tower.push_choice(1, "4".to_string(), true), true);
+    /// ```
+    pub fn push_choice(&mut self, question_number: usize, choice: String, answer: bool) -> bool
+    {
+        match &mut self.qbank
+        {
+            Some(qbank) => qbank.push_choice(question_number, (choice, answer)),
+            None => false
+        }
+    }
+
     // pub fn get_group(&self, question_number: usize) -> u16
     /// Retrieves the group number for a given question number from the QBank.
     /// 
@@ -473,6 +558,78 @@ impl ControlTower
         match &mut self.qbank
         {
             Some(qbank) => qbank.set_group(question_number, group),
+            None => false
+        }
+    }
+
+    // pub fn get_category(&self, question_number: usize) -> u8
+    /// Retrieves the category number for a given question number from the QBank.
+    /// 
+    /// If the QBank is not loaded or the question number is out of bounds,
+    /// it returns `0`.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The index of the question to retrieve the category for (1-based).
+    /// 
+    /// # Returns
+    /// - The category number for the specified question if the QBank is loaded
+    ///   and the question number is valid.
+    /// - `0` if the QBank is not loaded or the question number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_category(1), 0);
+    /// // After loading a QBank with a question at index 0 that belongs to category
+    /// // assert_eq!(control_tower.get_category(1), 1);
+    /// // for single answer of multiple-choice
+    /// ```
+    pub fn get_category(&self, question_number: usize) -> u8
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_category(question_number),
+            None => 0
+        }
+    }
+
+    // pub fn set_category(&mut self, question_number: usize, category: u8) -> bool
+    /// Sets the category number for a given question number in the QBank.
+    /// 
+    /// If the QBank is not loaded or the question number is out of bounds,
+    /// it returns `false`. Otherwise, it updates the category number and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The index of the question to set the category for (1-based).
+    /// * `category` - The new category number to set for the specified question.
+    /// 
+    /// # Returns
+    /// - `true` if the category number was successfully updated.
+    /// - `false` if the QBank is not loaded or the question number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.set_category(1, 1), false);
+    /// // After loading a QBank with a question at index 0
+    /// // assert_eq!(control_tower.set_category(1, 1), true);
+    /// ```
+    pub fn set_category(&mut self, question_number: usize, category: u8) -> bool
+    {
+        match &mut self.qbank
+        {
+            Some(qbank) => qbank.set_category(question_number, category),
+            None => false
+        }
+    }
+
+    pub fn remove_question(&mut self, question_number: usize) -> bool
+    {
+        match &mut self.qbank
+        {
+            Some(qbank) => qbank.remove_question(question_number),
             None => false
         }
     }
