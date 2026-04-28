@@ -106,6 +106,42 @@ impl ControlTower
         Err(ErrorMessage::FailedToRecevieQBankFromMemory)
     }
 
+    // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    /// Writes the question bank (QBank) to a byte vector containing SQLite
+    /// database data.
+    /// 
+    /// This method creates an in-memory SQLite database, writes the QBank to it,
+    /// and then saves the database to a byte vector.
+    /// 
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the SQLite database data on success
+    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.write_qbank_to_bytes_in_sqlite()
+    /// {
+    ///     Ok(data) => println!("QBank written to bytes successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to write QBank to bytes: {:?}", e),
+    /// }
+    /// ```
+    pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    {
+        if let Some(qbank) = &self.qbank
+        {
+            if let Some(mut db) = SQLiteDB::open_empty_in_memory()
+            {
+                if db.write_qbank(qbank).is_ok()
+                {
+                    return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteQBankToMemory);
+                }
+            }
+        }
+        Err(ErrorMessage::FailedToWriteQBankToMemory)
+    }
+
     // pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     /// Loads the student bank (SBank) from a byte slice
     /// containing SQLite database data.
@@ -153,11 +189,11 @@ impl ControlTower
         Err(ErrorMessage::FailedToRecevieSBankFromMemory)
     }
 
-    // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
-    /// Writes the question bank (QBank) to a byte vector containing SQLite
+    // pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    /// Writes the student bank (SBank) to a byte vector containing SQLite
     /// database data.
     /// 
-    /// This method creates an in-memory SQLite database, writes the QBank to it,
+    /// This method creates an in-memory SQLite database, writes the SBank to it,
     /// and then saves the database to a byte vector.
     /// 
     /// # Returns
@@ -168,10 +204,10 @@ impl ControlTower
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// match control_tower.write_qbank_to_bytes_in_sqlite()
+    /// match control_tower.write_sbank_to_bytes_in_sqlite()
     /// {
-    ///     Ok(data) => println!("QBank written to bytes successfully, size: {}", data.len()),
-    ///     Err(e) => println!("Failed to write QBank to bytes: {:?}", e),
+    ///     Ok(data) => println!("SBank written to bytes successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to write SBank to bytes: {:?}", e),
     /// }
     /// ```
     pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
