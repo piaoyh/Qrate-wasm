@@ -19,7 +19,7 @@ qrate = { path = "../Qrate" }
 # qrate = "0.6"
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
-
+#zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
 
 [package.metadata.docs.rs]
 targets = [

@@ -1,4 +1,4 @@
-// Copyright 2026 PARK Youngho.
+// Copyright 2026. PARK Youngho. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -16,8 +16,8 @@ pub enum ErrorMessage
     FailedToOpenSBank,
     FailedToOpenQExcel,
     FailedToOpenSExcel,
-    FailedToRecevieQBankFromMemory,
-    FailedToRecevieSBankFromMemory,
+    FailedToReceiveQBankFromMemory,
+    FailedToReceiveSBankFromMemory,
     FailedToWriteQBankToMemory,
     FailedToWriteSBankToMemory
 }

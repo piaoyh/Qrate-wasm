@@ -1,4 +1,4 @@
-// Copyright 2026 PARK Youngho.
+// Copyright 2026. PARK Youngho. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -103,7 +103,7 @@ impl ControlTower
                 return Ok(());
             }
         }
-        Err(ErrorMessage::FailedToRecevieQBankFromMemory)
+        Err(ErrorMessage::FailedToReceiveQBankFromMemory)
     }
 
     // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
@@ -186,7 +186,7 @@ impl ControlTower
                 return Ok(());
             }
         }
-        Err(ErrorMessage::FailedToRecevieSBankFromMemory)
+        Err(ErrorMessage::FailedToReceiveSBankFromMemory)
     }
 
     // pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
@@ -258,7 +258,12 @@ impl ControlTower
                 question.set_id(id as u16); // Set the question ID to the new question number
                 qbank.push_question(question);
             },
-            None => ()
+            None => {
+                let mut qbank = QBank::new_empty();
+                question.set_id(1); // Set the question ID to 1 for the first question
+                qbank.push_question(question);
+                self.qbank = Some(qbank);
+            }
         }
     }
 
@@ -833,6 +838,34 @@ impl ControlTower
         {
             Some(sbank) => sbank.push_student(Student::new(name_id.get_name(), name_id.get_id())),
             None => {}
+        }
+    }
+
+    // pub fn push_an_empty_student(&mut self)
+    /// Pushes an empty student (with empty name and ID) to the end of the SBank.
+    /// 
+    /// If the SBank is not loaded, this method initializes a new SBank and adds
+    /// the empty student to it.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.push_an_empty_student();
+    /// assert_eq!(control_tower.get_student_length(), 1);
+    /// assert_eq!(control_tower.get_student(1), NameId::new_empty());
+    /// ```
+    pub fn push_an_empty_student(&mut self)
+    {
+        let student = Student::new_empty();
+        match &mut self.sbank
+        {
+            Some(sbank) => sbank.push_student(student),
+            None => {
+                let mut sbank = SBank::new();
+                sbank.push_student(student);
+                self.sbank = Some(sbank);
+            }
         }
     }
 
