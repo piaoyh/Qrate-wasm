@@ -9,7 +9,7 @@
 
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
-            Student, Question, Generator };
+            Student, Question, Shuffler, Generator };
 use crate::{ AbstractDB, ChoiceMark, NameId, ErrorMessage };
 
 
@@ -719,6 +719,129 @@ impl ControlTower
             { qbank.optimize(); }
     }
 
+    pub fn get_title(&self) -> String
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_header().get_title().clone(),
+            None => String::new()
+        }
+    }
+
+    pub fn set_title(&mut self, title: String)
+    {
+        if let Some(qbank) = &mut self.qbank
+            { qbank.get_header_mut().set_title(title); }
+    }
+
+    pub fn get_name(&self) -> String
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_header().get_name().clone(),
+            None => String::new()
+        }
+    }
+
+    pub fn set_name(&mut self, name: String)
+    {
+        if let Some(qbank) = &mut self.qbank
+            { qbank.get_header_mut().set_name(name); }
+    }
+
+    pub fn get_id(&self) -> String
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_header().get_id().clone(),
+            None => String::new()
+        }
+    }
+
+    pub fn set_id(&mut self, id: String)
+    {
+        if let Some(qbank) = &mut self.qbank
+            { qbank.get_header_mut().set_id(id); }
+    }
+
+    pub fn get_notice(&self) -> String
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_header().get_notice().clone(),
+            None => String::new()
+        }
+    }
+
+    pub fn set_notice(&mut self, notice: String)
+    {
+        if let Some(qbank) = &mut self.qbank
+            { qbank.get_header_mut().set_notice(notice); }
+    }
+
+    pub fn get_header_categories_length(&self) -> usize
+    {
+        match &self.qbank
+        {
+            Some(qbank) => qbank.get_header().get_categories().len(),
+            None => 0
+        }
+    }
+
+    pub fn get_header_category(&self, index: usize) -> String
+    {
+        match &self.qbank
+        {
+            Some(qbank) => {
+                match qbank.get_header().get_category(index as u8)
+                {
+                    Some(cat) => cat.clone(),
+                    None => String::new()
+                }
+            },
+            None => String::new()
+        }
+    }
+
+    pub fn set_header_category(&mut self, index: usize, category: String)
+    {
+        if let Some(qbank) = &mut self.qbank
+        {
+            let header = qbank.get_header_mut();
+            let mut cats = header.get_categories().clone();
+            if index > 0 && index <= cats.len()
+            {
+                cats[index - 1] = category;
+                header.set_categories(cats);
+            }
+            else if index == cats.len() + 1
+            {
+                header.push_category(category);
+            }
+        }
+    }
+
+    // pub fn clear_qbank(&mut self)
+    /// Clears the question bank (QBank) by setting it to `None` and resetting
+    /// the `question_db` to `AbstractDB::None`.
+    /// 
+    /// After calling this method, the QBank will be unloaded and any associated
+    /// database will be reset.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.clear_qbank();
+    /// assert!(control_tower.qbank.is_none());
+    /// assert!(matches!(control_tower.question_db, AbstractDB::None));
+    /// ```
+    pub fn clear_qbank(&mut self)
+    {
+        self.qbank = None;
+        self.question_db = AbstractDB::None;
+    }
+
     // pub fn get_student_length(&self) -> usize
     /// Retrieves the number of students in the student bank (SBank).
     /// 
@@ -774,13 +897,9 @@ impl ControlTower
         {
             Some(sbank) => {
                 if let Some(student) = sbank.get_student(student_number)
-                {
-                    NameId::new(student.get_name(), student.get_id())
-                }
+                    { NameId::new(student.get_name(), student.get_id()) }
                 else
-                {
-                    NameId::new_empty()
-                }
+                    { NameId::new_empty() }
             },
             None => NameId::new_empty()
         }
@@ -897,5 +1016,130 @@ impl ControlTower
             Some(sbank) => sbank.remove_student(student_number),
             None => false
         }
+    }
+
+    // pub fn optimize_sbank(&mut self)
+    /// Optimizes the student bank (SBank) by calling its `optimize` method.
+    /// 
+    /// If the SBank is not loaded, this method does nothing.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.optimize_sbank();
+    /// // After loading an SBank, it will be optimized
+    /// control_tower.optimize_sbank();
+    /// ```
+    pub fn optimize_sbank(&mut self)
+    {
+        if let Some(sbank) = &mut self.sbank
+            { sbank.optimize(); }
+    }
+
+    // pub fn clear_sbank(&mut self)
+    /// Clears the student bank (SBank) by setting it to `None` and resetting
+    /// the `student_db` to `AbstractDB::None`.
+    /// 
+    /// After calling this method, the SBank will be unloaded and any associated
+    /// database will be reset.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.clear_sbank();
+    /// assert!(control_tower.sbank.is_none());
+    /// assert!(matches!(control_tower.student_db, AbstractDB::None));
+    /// ```
+    pub fn clear_sbank(&mut self)
+    {
+        self.sbank = None;
+        self.student_db = AbstractDB::None;
+    }
+
+    // pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize) -> Vec<u8>
+    /// Generates a shuffled exam in plain text format based on the questions
+    /// in the QBank and the students in the SBank.
+    /// 
+    /// This method creates a `Generator` instance using the loaded QBank and
+    /// SBank, and then calls the `export_shuffled_exams_in_txt()` method of
+    /// the generator to generate the exam in text format. The generated exam
+    /// is returned as a byte vector.
+    /// 
+    /// If the QBank or SBank is not loaded, it returns an empty byte vector.
+    /// 
+    /// # Arguments
+    /// * `start` - The starting group number for the exam generation.
+    /// * `end` - The ending group number for the exam generation.
+    /// * `selected` - The number of questions to select for each student.
+    /// 
+    /// # Returns
+    /// - A byte vector containing the generated exam in plain text format
+    ///   if the QBank and SBank are loaded.
+    /// - An empty byte vector if the QBank or SBank is not loaded.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// let exam_data = control_tower.generate_exam_in_txt(1, 5, 10);
+    /// if exam_data.is_empty()
+    ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
+    /// else
+    ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
+    /// ```
+    pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize) -> Vec<u8>
+    {
+
+        if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
+        {
+            if let Some(g) = Generator::new(qbank, start, end, selected, sbank)
+                { return g.export_shuffled_exams_in_txt(); }
+        }
+        Vec::new()
+    }
+
+    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16) -> Result<Vec<u8>, ErrorMessage>
+    /// Generates a shuffled exam in DOCX format based on the questions
+    /// in the QBank and the students in the SBank.
+    /// 
+    /// This method creates a `Generator` instance using the loaded QBank and
+    /// SBank, and then calls the `export_shuffled_exams_in_docx()` method of
+    /// the generator to generate the exam in DOCX format. The generated exam
+    /// is returned as a byte vector.
+    /// 
+    /// If the QBank or SBank is not loaded, it returns `FailedToGenerateExam`.
+    /// 
+    /// # Arguments
+    /// * `start` - The starting group number for the exam generation.
+    /// * `end` - The ending group number for the exam generation.
+    /// * `number_of_questions` - The number of questions to select
+    ///   for each student.
+    /// 
+    /// # Returns
+    /// - A `Result` containing a byte vector with the generated exam
+    ///   in DOCX format if the QBank and SBank are loaded.
+    /// - `ErrorMessage::FailedToGenerateExam` if the QBank or SBank is not loaded.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// if let Ok(exam_data) = control_tower.generate_exam_in_docx(1, 5, 10)
+    ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
+    /// else
+    ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
+    /// ```
+    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16) -> Result<Vec<u8>, ErrorMessage>
+    {
+        if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
+        {
+            if let Some(g) = Generator::new(qbank, start, end, number_of_questions as usize, sbank)
+            {
+                return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessage::FailedToGenerateExam);
+            }
+        }
+        Err(ErrorMessage::FailedToGenerateExam)
     }
 }

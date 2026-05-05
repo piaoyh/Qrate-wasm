@@ -19,5 +19,6 @@ pub enum ErrorMessage
     FailedToReceiveQBankFromMemory,
     FailedToReceiveSBankFromMemory,
     FailedToWriteQBankToMemory,
-    FailedToWriteSBankToMemory
+    FailedToWriteSBankToMemory,
+    FailedToGenerateExam,
 }
