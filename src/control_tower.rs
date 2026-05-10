@@ -9,7 +9,7 @@
 
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
-            Student, Question, Shuffler, Generator };
+            Student, Question, Generator };
 use crate::{ AbstractDB, ChoiceMark, NameId, ErrorMessage };
 
 
@@ -21,7 +21,6 @@ pub struct ControlTower
     student_db: AbstractDB,
     qbank: Option<QBank>,
     sbank: Option<SBank>,
-    generator: Option<Generator>,
 }
 
 #[wasm_bindgen]
@@ -55,7 +54,6 @@ impl ControlTower
             student_db: AbstractDB::None,
             qbank: None,
             sbank: None,
-            generator: None,
         }
     }
 
@@ -1058,7 +1056,7 @@ impl ControlTower
         self.student_db = AbstractDB::None;
     }
 
-    // pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize) -> Vec<u8>
+    // pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, seeds:  &[u64]) -> Vec<u8>
     /// Generates a shuffled exam in plain text format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1073,6 +1071,7 @@ impl ControlTower
     /// * `start` - The starting group number for the exam generation.
     /// * `end` - The ending group number for the exam generation.
     /// * `selected` - The number of questions to select for each student.
+    /// * `seeds` - A seed array, each element of which is of u64.
     /// 
     /// # Returns
     /// - A byte vector containing the generated exam in plain text format
@@ -1089,18 +1088,20 @@ impl ControlTower
     /// else
     ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
     /// ```
-    pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize) -> Vec<u8>
+    pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, seeds: &[u64]) -> Vec<u8>
     {
-
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
-            if let Some(g) = Generator::new(qbank, start, end, selected, sbank)
+            let mut seed_array = [0u64; 16];
+            for i in 0..16
+                { seed_array[i] = seeds[i]; }
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, selected, sbank, seed_array)
                 { return g.export_shuffled_exams_in_txt(); }
         }
         Vec::new()
     }
 
-    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16) -> Result<Vec<u8>, ErrorMessage>
+    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     /// Generates a shuffled exam in DOCX format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1116,6 +1117,7 @@ impl ControlTower
     /// * `end` - The ending group number for the exam generation.
     /// * `number_of_questions` - The number of questions to select
     ///   for each student.
+    /// * `seeds` - A seed array, each element of which is of u64.
     /// 
     /// # Returns
     /// - A `Result` containing a byte vector with the generated exam
@@ -1131,14 +1133,15 @@ impl ControlTower
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
-    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16) -> Result<Vec<u8>, ErrorMessage>
+    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
-            if let Some(g) = Generator::new(qbank, start, end, number_of_questions as usize, sbank)
-            {
-                return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessage::FailedToGenerateExam);
-            }
+            let mut seed_array = [0u64; 16];
+            for i in 0..16
+                { seed_array[i] = seeds[i]; }
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, seed_array)
+                { return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessage::FailedToGenerateExam); }
         }
         Err(ErrorMessage::FailedToGenerateExam)
     }
