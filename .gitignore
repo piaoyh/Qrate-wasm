@@ -3,6 +3,7 @@ target/
 .vscode/
 .idea/
 .git/
+.cargo/
 Cargo.lock
 git.txt
 *.pub
