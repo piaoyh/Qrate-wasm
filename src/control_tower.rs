@@ -1145,4 +1145,49 @@ impl ControlTower
         }
         Err(ErrorMessage::FailedToGenerateExam)
     }
+
+    // pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    /// Generates a shuffled exam in PDF format based on the questions
+    /// in the QBank and the students in the SBank.
+    /// 
+    /// This method creates a `Generator` instance using the loaded QBank and
+    /// SBank, and then calls the `export_shuffled_exams_in_pdf()` method of
+    /// the generator to generate the exam in PDF format. The generated exam
+    /// is returned as a byte vector.
+    /// 
+    /// If the QBank or SBank is not loaded, it returns `FailedToGenerateExam`.
+    /// 
+    /// # Arguments
+    /// * `start` - The starting group number for the exam generation.
+    /// * `end` - The ending group number for the exam generation.
+    /// * `number_of_questions` - The number of questions to select
+    ///   for each student.
+    /// * `seeds` - A seed array, each element of which is of u64.
+    /// 
+    /// # Returns
+    /// - A `Result` containing a byte vector with the generated exam
+    ///   in PDF format if the QBank and SBank are loaded.
+    /// - `ErrorMessage::FailedToGenerateExam` if the QBank or SBank is not loaded.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// if let Ok(exam_data) = control_tower.generate_exam_in_pdf(1, 5, 10)
+    ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
+    /// else
+    ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
+    /// ```
+    pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    {
+        if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
+        {
+            let mut seed_array = [0u64; 16];
+            for i in 0..16
+                { seed_array[i] = seeds[i]; }
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, seed_array)
+                { return g.export_shuffled_exams_in_pdf().map_err(|_| ErrorMessage::FailedToGenerateExam); }
+        }
+        Err(ErrorMessage::FailedToGenerateExam)
+    }
 }
