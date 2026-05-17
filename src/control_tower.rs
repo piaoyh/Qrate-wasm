@@ -127,10 +127,11 @@ impl ControlTower
     ///     Err(e) => println!("Failed to write QBank to bytes: {:?}", e),
     /// }
     /// ```
-    pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    pub fn write_qbank_to_bytes_in_sqlite(&mut self) -> Result<Vec<u8>, ErrorMessage>
     {
-        if let Some(qbank) = &self.qbank
+        if let Some(qbank) = &mut self.qbank
         {
+            qbank.determine_categories();
             if let Some(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_qbank(qbank).is_ok()
