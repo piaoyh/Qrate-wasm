@@ -11,6 +11,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct ChoiceMark
 {
     text: String,

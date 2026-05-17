@@ -10,7 +10,7 @@
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
             Student, Question, Generator };
-use crate::{ AbstractDB, ChoiceMark, NameId, ErrorMessage };
+use crate::{ AbstractDB, ChoiceMark, NameId, QuestionData, ErrorMessage };
 
 
 
@@ -21,6 +21,7 @@ pub struct ControlTower
     student_db: AbstractDB,
     qbank: Option<QBank>,
     sbank: Option<SBank>,
+    generator: Option<Generator>,
 }
 
 #[wasm_bindgen]
@@ -54,6 +55,7 @@ impl ControlTower
             student_db: AbstractDB::None,
             qbank: None,
             sbank: None,
+            generator: None,
         }
     }
 
@@ -223,19 +225,6 @@ impl ControlTower
         Err(ErrorMessage::FailedToWriteSBankToMemory)
     }
 
-    pub fn generate_pdf(&self) -> Result<Vec<u8>, String>
-    {
-        if let (Some(_qbank), Some(_sbank)) = (&self.qbank, &self.sbank)
-        {
-            // TODO: Implement buffer-based PDF generation
-            Ok(vec![])
-        }
-        else
-        {
-            Err("QBank or SBank not loaded".to_string())
-        }
-    }
-
     // pub fn push_an_empty_question(&mut self)
     /// Pushes an empty question to the QBank.
     /// 
@@ -289,13 +278,9 @@ impl ControlTower
     pub fn determine_category(&mut self, question_number: usize) -> bool
     {
         if let Some(qbank) = &mut self.qbank
-        {
-            qbank.determine_category(question_number)
-        }
+            { qbank.determine_category(question_number) }
         else
-        {
-            false
-        }
+            { false}
     }
 
     // pub fn get_question_length(&self) -> usize
@@ -698,6 +683,37 @@ impl ControlTower
         }
     }
 
+    // pub fn remove_choice(&mut self, question_number: usize, choice_number: usize) -> bool
+    /// Removes a choice from the Quetion by its 1-based index.
+    /// 
+    /// If the QBank is not loaded or the question number is out of bounds,
+    /// it returns `false`. Otherwise, it removes the choice and returns `true`.
+    /// 
+    /// # Arguments
+    /// * `question_number` - The 1-based index of the question to remove.
+    /// * `choice_number` - The 1-based index of the choice to remove.
+    /// 
+    /// # Returns
+    /// - `true` if the choice was successfully removed.
+    /// - `false` if the QBank is not loaded or the question number is invalid.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.remove_question(1), false);
+    /// // After loading a QBank with a question at index 0
+    /// // assert_eq!(control_tower.remove_question(1), true);
+    /// ```
+    pub fn remove_choice(&mut self, question_number: usize, choice_number: usize) -> bool
+    {
+        match &mut self.qbank
+        {
+            Some(qbank) => qbank.remove_choice(question_number, choice_number),
+            None => false
+        }
+    }
+
     // pub fn optimize_qbank(&mut self)
     /// Optimizes the question bank (QBank) by calling its `optimize` method.
     /// 
@@ -717,6 +733,22 @@ impl ControlTower
             { qbank.optimize(); }
     }
 
+    // pub fn get_title(&self) -> String
+    /// Retrieves the title of the QBank.
+    /// 
+    /// If the QBank is not loaded, it returns an empty string.
+    /// 
+    /// # Returns
+    /// - `String`: The title of the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_title(), "");
+    /// // After loading a QBank with a title
+    /// // assert_eq!(control_tower.get_title(), "My QBank");
+    /// ```
     pub fn get_title(&self) -> String
     {
         match &self.qbank
@@ -726,12 +758,44 @@ impl ControlTower
         }
     }
 
+    // pub fn set_title(&mut self, title: String)
+    /// Sets the title of the QBank.
+    /// 
+    /// If the QBank is not loaded, this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `title` - The new title to set for the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.set_title("New Title".to_string());
+    /// // After loading a QBank, its title will be updated
+    /// control_tower.set_title("Updated Title".to_string());
+    /// ```
     pub fn set_title(&mut self, title: String)
     {
         if let Some(qbank) = &mut self.qbank
             { qbank.get_header_mut().set_title(title); }
     }
 
+    // pub fn get_name(&self) -> String
+    /// Retrieves the name of the QBank.
+    /// 
+    /// If the QBank is not loaded, it returns an empty string.
+    /// 
+    /// # Returns
+    /// - `String`: The name of the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_name(), "");
+    /// // After loading a QBank with a name
+    /// // assert_eq!(control_tower.get_name(), "My QBank");
+    /// ```
     pub fn get_name(&self) -> String
     {
         match &self.qbank
@@ -741,12 +805,44 @@ impl ControlTower
         }
     }
 
+    // pub fn set_name(&mut self, name: String)
+    /// Sets the name of the QBank.
+    /// 
+    /// If the QBank is not loaded, this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `name` - The new name to set for the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.set_name("New Name".to_string());
+    /// // After loading a QBank, its name will be updated
+    /// control_tower.set_name("Updated Name".to_string());
+    /// ```
     pub fn set_name(&mut self, name: String)
     {
         if let Some(qbank) = &mut self.qbank
             { qbank.get_header_mut().set_name(name); }
     }
 
+    // pub fn get_id(&self) -> String
+    /// Retrieves the ID of the QBank.
+    /// 
+    /// If the QBank is not loaded, it returns an empty string.
+    /// 
+    /// # Returns
+    /// - `String`: The ID of the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_id(), "");
+    /// // After loading a QBank with an ID
+    /// // assert_eq!(control_tower.get_id(), "QBank123");
+    /// ```
     pub fn get_id(&self) -> String
     {
         match &self.qbank
@@ -756,12 +852,44 @@ impl ControlTower
         }
     }
 
+    // pub fn set_id(&mut self, id: String)
+    /// Sets the ID of the QBank.
+    /// 
+    /// If the QBank is not loaded, this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `id` - The new ID to set for the QBank.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.set_id("New ID".to_string());
+    /// // After loading a QBank, its ID will be updated
+    /// control_tower.set_id("Updated ID".to_string());
+    /// ```
     pub fn set_id(&mut self, id: String)
     {
         if let Some(qbank) = &mut self.qbank
             { qbank.get_header_mut().set_id(id); }
     }
 
+    // pub fn get_notice(&self) -> String
+    /// Retrieves the notice string from the QBank's header.
+    /// 
+    /// If the QBank is not loaded, it returns an empty string.
+    /// 
+    /// # Returns
+    /// - `String`: The notice string from the QBank's header.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_notice(), "");
+    /// // After loading a QBank with a notice
+    /// // assert_eq!(control_tower.get_notice(), "Important Notice!");
+    /// ```
     pub fn get_notice(&self) -> String
     {
         match &self.qbank
@@ -771,12 +899,44 @@ impl ControlTower
         }
     }
 
+    // pub fn set_notice(&mut self, notice: String)
+    /// Sets the notice string in the QBank's header.
+    /// 
+    /// If the QBank is not loaded, this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `notice` - The new notice string to set in the QBank's header.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.set_notice("New Notice".to_string());
+    /// // After loading a QBank, its notice will be updated
+    /// control_tower.set_notice("Updated Notice".to_string());
+    /// ```
     pub fn set_notice(&mut self, notice: String)
     {
         if let Some(qbank) = &mut self.qbank
             { qbank.get_header_mut().set_notice(notice); }
     }
 
+    // pub fn get_header_categories_length(&self) -> usize
+    /// Retrieves the number of categories in the QBank's header.
+    /// 
+    /// If the QBank is not loaded, it returns `0`.
+    /// 
+    /// # Returns
+    /// - `usize`: The number of categories in the QBank's header.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_header_categories_length(), 0);
+    /// // After loading a QBank with categories
+    /// // assert_eq!(control_tower.get_header_categories_length(), 2);
+    /// ```
     pub fn get_header_categories_length(&self) -> usize
     {
         match &self.qbank
@@ -786,6 +946,26 @@ impl ControlTower
         }
     }
 
+    // pub fn get_header_category(&self, index: usize) -> String
+    /// Retrieves a specific category from the QBank's header by index.
+    /// 
+    /// If the QBank is not loaded or the index is out of bounds, it returns an empty string.
+    /// 
+    /// # Arguments
+    /// * `index` - The zero-based index of the category to retrieve.
+    /// 
+    /// # Returns
+    /// - `String`: The category string at the specified index.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// assert_eq!(control_tower.get_header_category(0), "");
+    /// // After loading a QBank with categories
+    /// // assert_eq!(control_tower.get_header_category(0), "Category 1");
+    /// // assert_eq!(control_tower.get_header_category(1), "Category 2");
+    /// ```
     pub fn get_header_category(&self, index: usize) -> String
     {
         match &self.qbank
@@ -801,6 +981,24 @@ impl ControlTower
         }
     }
 
+    // pub fn set_header_category(&mut self, index: usize, category: String)
+    /// Sets a specific category in the QBank's header by index.
+    /// 
+    /// If the QBank is not loaded or the index is out of bounds,
+    /// this method does nothing.
+    /// 
+    /// # Arguments
+    /// * `index` - The zero-based index of the category to set.
+    /// * `category` - The new category string to set at the specified index.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.set_header_category(0, "New Category".to_string());
+    /// // After loading a QBank, its categories will be updated
+    /// control_tower.set_header_category(0, "Updated Category".to_string());
+    /// ```
     pub fn set_header_category(&mut self, index: usize, category: String)
     {
         if let Some(qbank) = &mut self.qbank
@@ -1189,5 +1387,171 @@ impl ControlTower
                 { return g.export_shuffled_exams_in_pdf().map_err(|_| ErrorMessage::FailedToGenerateExam); }
         }
         Err(ErrorMessage::FailedToGenerateExam)
+    }
+
+    // pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
+    /// Starts a self-study session with the specified parameters.
+    /// 
+    /// This method creates a `Generator` instance using the loaded QBank and
+    /// starts the self-study session with the specified parameters.
+    /// 
+    /// If the QBank is not loaded, it returns `false`.
+    /// 
+    /// # Arguments
+    /// * `start` - The starting question number for the self-study session.
+    /// * `end` - The ending question number for the self-study session.
+    /// * `number_of_questions` - The number of questions to select
+    ///   for user student.
+    /// * `seeds` - A seed array, each element of which is of u64.
+    /// 
+    /// # Returns
+    /// - `true` if the self-study session is started successfully.
+    pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
+    {
+        if let Some(qbank) = &self.qbank
+        {
+            let mut seed_array = [0u64; 16];
+            for i in 0..16
+                { seed_array[i] = seeds[i]; }
+            // 아무 문제도 만들어지지 않음. 여기가 문제임
+            self.generator = Generator::new_one_set_with_seeds(qbank, start, end, number_of_questions as usize, seed_array);
+            return self.generator.is_some();
+        }
+        false
+    }
+
+    // pub fn get_self_study_number_of_questions(&self) -> u16
+    /// Returns the number of questions in the self-study session.
+    /// 
+    /// This method returns the number of questions in the self-study session
+    /// from the `Generator` instance. If the `Generator` instance is not
+    /// initialized, it returns `0`.
+    /// 
+    /// # Returns
+    /// - The number of questions in the self-study session.
+    /// - `0` if the `Generator` instance is not initialized.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// let num_questions = control_tower.get_self_study_number_of_questions();
+    /// println!("Number of questions in self-study session: {}", num_questions);
+    /// ```
+    pub fn get_self_study_number_of_questions(&self) -> u16
+    {
+        if let Some(g) = &self.generator
+            { g.get_number_of_questions() as u16 }
+        else
+            { 0 }
+    }
+
+    // pub fn get_self_study_question(&mut self, num: u16) -> Option<QuestionData>
+    /// Returns the question data for the specified question number.
+    /// 
+    /// This method returns the question data for the specified question number
+    /// from the `Generator` instance. If the `Generator` instance is not
+    /// initialized, it returns `None`.
+    /// 
+    /// # Arguments
+    /// * `num` - The question number to retrieve.
+    /// 
+    /// # Returns
+    /// - `Some(QuestionData)` if the question data is retrieved successfully.
+    /// - `None` if the `Generator` instance is not initialized.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// if let Some(qdata) = control_tower.get_self_study_question(1)
+    ///     { println!("Question data retrieved successfully"); }
+    /// else
+    ///     { println!("Failed to retrieve question data"); }
+    /// ```
+    pub fn get_self_study_question(&mut self, num: u16) -> Option<QuestionData>
+    {
+        if let Some(generator) = &mut self.generator
+        {
+            if let Some((num, cat_id, cat_str, question, choices)) = generator.get_question_by_number(num)
+            {
+                let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
+                for (c_text, c_correct) in choices
+                    { qdata.push_choice(c_text, c_correct); }
+                // generator.set_current_question_number(num);
+                return Some(qdata);
+            }
+        }
+        None
+    }
+
+    // pub fn get_next_self_study_question(&mut self) -> Option<QuestionData>
+    /// Returns the next question data in the self-study session.
+    /// 
+    /// This method returns the next question data in the self-study session
+    /// from the `Generator` instance. If the `Generator` instance is not
+    /// initialized, it returns `None`.
+    /// 
+    /// # Returns
+    /// - `Some(QuestionData)` if the next question data is retrieved successfully.
+    /// - `None` if the `Generator` instance is not initialized.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// if let Some(qdata) = control_tower.get_next_self_study_question()
+    ///     { println!("Next question data retrieved successfully"); }
+    /// else
+    ///     { println!("Failed to retrieve next question data"); }
+    /// ```
+    pub fn get_next_self_study_question(&mut self) -> Option<QuestionData>
+    {
+        if let Some(g) = &mut self.generator
+        {
+            if let Some((num, cat_id, cat_str, question, choices)) = g.next()
+            {
+                let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
+                for (c_text, c_correct) in choices
+                    { qdata.push_choice(c_text, c_correct); }
+                return Some(qdata);
+            }
+        }
+        None
+    }
+
+    // pub fn get_prev_self_study_question(&mut self) -> Option<QuestionData>
+    /// Returns the previous question data in the self-study session.
+    /// 
+    /// This method returns the previous question data in the self-study session
+    /// from the `Generator` instance. If the `Generator` instance is not
+    /// initialized, it returns `None`.
+    /// 
+    /// # Returns
+    /// - `Some(QuestionData)` if the previous question data is retrieved successfully.
+    /// - `None` if the `Generator` instance is not initialized.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// if let Some(qdata) = control_tower.get_prev_self_study_question()
+    ///     { println!("Previous question data retrieved successfully"); }
+    /// else
+    ///     { println!("Failed to retrieve previous question data"); }
+    /// ```
+    pub fn get_prev_self_study_question(&mut self) -> Option<QuestionData>
+    {
+        if let Some(g) = &mut self.generator
+        {
+            if let Some((num, cat_id, cat_str, question, choices)) = g.prev()
+            {
+                let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
+                for (c_text, c_correct) in choices
+                    { qdata.push_choice(c_text, c_correct); }
+                return Some(qdata);
+            }
+        }
+        None
     }
 }

@@ -11,12 +11,14 @@ pub mod error_messages;
 pub mod abstract_db;
 pub mod choice_mark;
 pub mod name_id;
+pub mod question_data;
 
 pub use control_tower::ControlTower;
 pub use error_messages::ErrorMessage;
 pub use abstract_db::AbstractDB;
 pub use choice_mark::ChoiceMark;
 pub use name_id::NameId;
+pub use question_data::QuestionData;
 
 use wasm_bindgen::prelude::*;
 
