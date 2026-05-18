@@ -348,6 +348,45 @@ impl ControlTower
         }
     }
 
+    // pub fn get_question_data(&mut self, num: u16) -> Option<QuestionData>
+    /// Returns the question data from question bank (QBank)
+    /// for the specified question number.
+    /// 
+    /// This method returns the question data from question bank (QBank)
+    /// for the specified question number. If the `Generator` instance is not
+    /// initialized, it returns `None`.
+    /// 
+    /// # Arguments
+    /// * `num` - The question number to retrieve.
+    /// 
+    /// # Returns
+    /// - `Some(QuestionData)` if the question data is retrieved successfully.
+    /// - `None` if the `Generator` instance is not initialized.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate::QBank;
+    /// let qbank = QBank::new();
+    /// if let Some(qdata) = qbank.get_question_data(1)
+    ///     { println!("Question data retrieved successfully"); }
+    /// else
+    ///     { println!("Failed to retrieve question data"); }
+    /// ```
+    pub fn get_question_data(&mut self, num: u16) -> Option<QuestionData>
+    {
+        if let Some(qbank) = &mut self.qbank
+        {
+            if let Some((num, cat_id, cat_str, question, choices)) = qbank.get_question_by_number(num)
+            {
+                let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
+                for (c_text, c_correct) in choices
+                    { qdata.push_choice(c_text, c_correct); }
+                return Some(qdata);
+            }
+        }
+        None
+    }
+
     // pub fn set_question(&self, question_number: usize, txt: String) -> bool  
     /// Sets the question text for a given question number in the QBank.
     /// If the QBank is not loaded or the question number is out of bounds,
