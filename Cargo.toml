@@ -1,7 +1,7 @@
 [package]
 authors = ["PARK Youngho"]
 name = "qrate-wasm"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 keywords = ["quiz", "gui", "examination", "question", "teacher"]
 categories = ["algorithms", "data-structures", "database", "gui"]
@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 qrate = { path = "../Qrate" }
-#qrate = "0.8"
+#qrate = "0.9"
 wasm-bindgen = "0.2"
 getrandom = { version = "0.4", features = ["wasm_js"] }
 #zip = { version = "2.4.2", default-features = false, features = ["deflate"] }

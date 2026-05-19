@@ -376,7 +376,7 @@ impl ControlTower
     {
         if let Some(qbank) = &mut self.qbank
         {
-            if let Some((num, cat_id, cat_str, question, choices)) = qbank.get_question_by_number(num)
+            if let Some((num, cat_id, cat_str, question, choices)) = qbank.get_question_data(num)
             {
                 let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
                 for (c_text, c_correct) in choices
