@@ -8,11 +8,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-use qrate::{ SQLiteDB, Excel };
+use qrate::SQLiteDB;
 pub enum AbstractDB
 {
     SQLite(SQLiteDB),
-    Excel(Excel),
+    // Excel(Excel),
     None,
 }
 
@@ -33,6 +33,7 @@ impl AbstractDB
     /// 
     /// # Returns
     /// `true` if the database is Excel, `false` otherwise.
+    #[cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))]
     pub fn is_excel(&self) -> bool
     {
         matches!(self, AbstractDB::Excel(_))

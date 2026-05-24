@@ -15,8 +15,8 @@ repository = "https://github.com/piaoyh/qrate-wasm"
 crate-type = ["cdylib"]
 
 [dependencies]
-qrate = { path = "../Qrate" }
-#qrate = "0.9"
+#qrate = { path = "../Qrate" }
+qrate = "0.9"
 wasm-bindgen = "0.2"
 
 [package.metadata.docs.rs]
