@@ -9,6 +9,7 @@
 
 
 use qrate::SQLiteDB;
+
 pub enum AbstractDB
 {
     SQLite(SQLiteDB),
@@ -23,6 +24,13 @@ impl AbstractDB
     /// 
     /// # Returns
     /// `true` if the database is SQLite, `false` otherwise.
+    /// 
+    /// # Examples
+    /// ```rust
+    /// let db = AbstractDB::SQLite(SQLiteDB::new("test.db").unwrap());
+    /// assert!(db.is_sqlite());
+    /// ```
+    #[inline]
     pub fn is_sqlite(&self) -> bool
     {
         matches!(self, AbstractDB::SQLite(_))
@@ -33,7 +41,14 @@ impl AbstractDB
     /// 
     /// # Returns
     /// `true` if the database is Excel, `false` otherwise.
+    /// 
+    /// # Examples
+    /// ```rust
+    /// let db = AbstractDB::Excel(Excel::new("test.xlsx").unwrap());
+    /// assert!(db.is_excel());
+    /// ```
     #[cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))]
+    #[inline]
     pub fn is_excel(&self) -> bool
     {
         matches!(self, AbstractDB::Excel(_))
@@ -44,6 +59,13 @@ impl AbstractDB
     /// 
     /// # Returns
     /// `true` if the database is None, `false` otherwise.
+    /// 
+    /// # Examples
+    /// ```rust
+    /// let db = AbstractDB::None;
+    /// assert!(db.is_none());
+    /// ```
+    #[inline]
     pub fn is_none(&self) -> bool
     {
         matches!(self, AbstractDB::None)
