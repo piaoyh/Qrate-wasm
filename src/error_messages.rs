@@ -12,6 +12,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 pub enum ErrorMessage
 {
+    InvalidVersion,
     FailedToOpenQBank,
     FailedToOpenSBank,
     FailedToOpenQExcel,

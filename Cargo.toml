@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 #qrate = { path = "../Qrate" }
-qrate = "0.9"
+qrate = "0.11"
 wasm-bindgen = "0.2"
 
 [package.metadata.docs.rs]

@@ -8,8 +8,7 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ QBDB, QBank, SBDB, SBank, SBankHelper, SQLiteDB,
-            Student, Question, Generator };
+use qrate::{ QBDB, QBank, SBDB, SBank, SQLiteDB, Student, Question, Generator };
 use crate::{ AbstractDB, ChoiceMark, NameId, QuestionData, ErrorMessage };
 
 
@@ -97,8 +96,10 @@ impl ControlTower
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             self.qbank = db.read_qbank();
-            if self.qbank.is_some()
+            if let Some(qbank) = &self.qbank
             {
+                if qbank.get_version() > QBank::VERSION
+                    { return Err(ErrorMessage::InvalidVersion); }
                 self.question_db = AbstractDB::SQLite(db);
                 return Ok(());
             }
@@ -181,8 +182,10 @@ impl ControlTower
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             self.sbank = db.read_sbank();
-            if self.sbank.is_some()
+            if let Some(sbank) = &self.sbank
             {
+                if sbank.get_version() > SBank::VERSION
+                    { return Err(ErrorMessage::InvalidVersion); }
                 self.student_db = AbstractDB::SQLite(db);
                 return Ok(());
             }
