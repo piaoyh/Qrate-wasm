@@ -11,15 +11,19 @@ use wasm_bindgen::prelude::*;
 use crate::ChoiceMark;
 
 
-
+/// Represents the data for a quiz question, including the question number,
+/// category, question text, and a list of choices. This struct provides methods
+/// to create a new `QuestionData` instance, retrieve the question number,
+/// category, question text, and choices. The `QuestionData` struct is designed
+/// to be used in a WebAssembly context, allowing it to be easily
 #[wasm_bindgen]
 pub struct QuestionData
 {
-    num: u16,
-    category_id: u8,
-    category_str: String,
-    question: String,
-    choices: Vec<ChoiceMark>,
+    num: u16,                   // The question number.
+    category_id: u8,            // The category ID of the question.
+    category_str: String,       // The category string of the question.
+    question: String,           // The text of the question.
+    choices: Vec<ChoiceMark>,   // A list of choices for the question.
 }
 
 #[wasm_bindgen]

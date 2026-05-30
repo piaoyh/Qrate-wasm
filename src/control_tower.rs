@@ -98,7 +98,7 @@ impl ControlTower
             self.qbank = db.read_qbank();
             if let Some(qbank) = &self.qbank
             {
-                if qbank.get_version() > QBank::VERSION
+                if qbank.is_higher_version()
                     { return Err(ErrorMessage::InvalidVersion); }
                 self.question_db = AbstractDB::SQLite(db);
                 return Ok(());
@@ -136,9 +136,7 @@ impl ControlTower
             if let Some(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_qbank(qbank).is_ok()
-                {
-                    return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteQBankToMemory);
-                }
+                    { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteQBankToMemory); }
             }
         }
         Err(ErrorMessage::FailedToWriteQBankToMemory)
@@ -184,7 +182,7 @@ impl ControlTower
             self.sbank = db.read_sbank();
             if let Some(sbank) = &self.sbank
             {
-                if sbank.get_version() > SBank::VERSION
+                if sbank.is_higher_version()
                     { return Err(ErrorMessage::InvalidVersion); }
                 self.student_db = AbstractDB::SQLite(db);
                 return Ok(());
@@ -221,9 +219,7 @@ impl ControlTower
             if let Some(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_sbank(sbank).is_ok()
-                {
-                    return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteSBankToMemory);
-                }
+                    { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteSBankToMemory); }
             }
         }
         Err(ErrorMessage::FailedToWriteSBankToMemory)
@@ -338,17 +334,13 @@ impl ControlTower
     /// ```
     pub fn get_question(&self, question_number: usize) -> String
     {
-        match &self.qbank
+        if let Some(qbank) = &self.qbank
         {
-            Some(qbank) => {
-                match qbank.get_question(question_number)
-                {
-                    Some(question) => question.get_question().clone(),
-                    None => String::new()
-                }
-            },
-            None => String::new()
+            if let Some(question) = qbank.get_question(question_number)
+                { return question.get_question().clone(); }
+            
         }
+        String::new()
     }
 
     // pub fn get_question_data(&mut self, num: u16) -> Option<QuestionData>
@@ -413,20 +405,15 @@ impl ControlTower
     /// ```
     pub fn set_question(&mut self, question_number: usize, txt: String) -> bool
     {
-        match &mut self.qbank
+        if let Some(qbank) = &mut self.qbank
         {
-            Some(qbank) => {
-                match qbank.get_question_mut(question_number)
-                {
-                    Some(question) => {
-                        question.set_question(txt);
-                        true
-                    },
-                    None => false
-                }
-            },
-            None => false
+            if let Some(question) = qbank.get_question_mut(question_number)
+            {
+                question.set_question(txt);
+                return true;
+            }
         }
+        false
     }
 
     // pub fn get_choices_length(&self, question_number: usize) -> usize
@@ -490,17 +477,12 @@ impl ControlTower
     /// ```
     pub fn get_choice(&self, question_number: usize, choice_number: usize) -> ChoiceMark
     {
-        match &self.qbank
+        if let Some(qbank) = &self.qbank
         {
-            Some(qbank) => {
-                match qbank.get_choice(question_number, choice_number)
-                {
-                    Some(choice) => { ChoiceMark::new(choice.0.clone(), choice.1) }
-                    None => ChoiceMark::new(String::new(), false)
-                }
-            },
-            None => ChoiceMark::new(String::new(), false)
+            if let Some(choice) = qbank.get_choice(question_number, choice_number)
+                { return ChoiceMark::new(choice.0.clone(), choice.1); }
         }
+        ChoiceMark::new(String::new(), false)
     }
 
     // pub fn set_choice(&mut self, question_number: usize, choice_number: usize,  choice_answer: ChoiceMark) -> bool
@@ -1011,17 +993,12 @@ impl ControlTower
     /// ```
     pub fn get_header_category(&self, index: usize) -> String
     {
-        match &self.qbank
+        if let Some(qbank) = &self.qbank
         {
-            Some(qbank) => {
-                match qbank.get_header().get_category(index as u8)
-                {
-                    Some(cat) => cat.clone(),
-                    None => String::new()
-                }
-            },
-            None => String::new()
+            if let Some(cat) = qbank.get_header().get_category(index as u8)
+                { return cat.clone(); }
         }
+        String::new()
     }
 
     // pub fn set_header_category(&mut self, index: usize, category: String)
@@ -1132,16 +1109,12 @@ impl ControlTower
     /// ```
     pub fn get_student(&self, student_number: usize) -> NameId
     {
-        match &self.sbank
+        if let Some(sbank) = &self.sbank
         {
-            Some(sbank) => {
-                if let Some(student) = sbank.get_student(student_number)
-                    { NameId::new(student.get_name(), student.get_id()) }
-                else
-                    { NameId::new_empty() }
-            },
-            None => NameId::new_empty()
+            if let Some(student) = sbank.get_student(student_number)
+                { return NameId::new(student.get_name(), student.get_id()); }
         }
+        NameId::new_empty()
     }
 
     // pub fn set_student(&self, student_number: usize, name_id: NameId) -> bool
@@ -1419,6 +1392,7 @@ impl ControlTower
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
     pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)

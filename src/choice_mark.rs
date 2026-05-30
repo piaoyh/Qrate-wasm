@@ -10,12 +10,17 @@
 
 use wasm_bindgen::prelude::*;
 
+/// Represents a choice answer for a quiz question, containing the text of the
+/// choice and a flag indicating whether it is the correct answer. This struct
+/// provides methods to create a new choice answer, retrieve the text, and check
+/// if it is correct. The `ChoiceMark` struct is designed to be used in a
+/// WebAssembly context, allowing it to be easily manipulated from JavaScript.
 #[wasm_bindgen]
 #[derive(Clone)]
 pub struct ChoiceMark
 {
-    text: String,
-    is_correct: bool,
+    text: String,       // The text of the choice answer.
+    is_correct: bool,   // A flag indicating whether this choice is the correct answer.
 }
 
 
@@ -29,7 +34,7 @@ impl ChoiceMark
     /// * `text` - The text of the choice answer.
     /// * `is_correct` - A boolean indicating whether this choice is the correct answer.
     ///
-    /// # Output
+    /// # Returns
     /// `Self` - A new instance of `ChoiceAnswer`.
     ///
     /// # Examples

@@ -10,11 +10,17 @@
 
 use wasm_bindgen::prelude::*;
 
+
+/// Represents a name and ID pair, commonly used for students and questions.
+/// This struct provides methods to create a new `NameId`, retrieve the name
+/// and ID, and create an empty `NameId`. The `NameId` struct is designed to
+/// be used in a WebAssembly context, allowing it to be easily manipulated
+/// from JavaScript.
 #[wasm_bindgen]
 pub struct NameId
 {
-    name: String,
-    id: String,
+    name: String,   // The name associated with the ID.
+    id: String,     // The ID associated with the name.
 }
 
 
