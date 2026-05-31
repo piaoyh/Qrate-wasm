@@ -36,6 +36,7 @@ impl AbstractDB
         matches!(self, AbstractDB::SQLite(_))
     }
 
+    /*
     // pub fn is_excel(&self) -> bool
     /// Checks if the current database is an Excel database.
     /// 
@@ -44,7 +45,7 @@ impl AbstractDB
     /// 
     /// # Examples
     /// ```rust
-    /// let db = AbstractDB::Excel(Excel::new("test.xlsx").unwrap());
+    /// let db = AbstractDB::SQLite(SQLiteDB::new("test.db").unwrap());
     /// assert!(db.is_excel());
     /// ```
     #[cfg(not(any(target_arch = "wasm32", target_arch = "wasm64")))]
@@ -53,6 +54,7 @@ impl AbstractDB
     {
         matches!(self, AbstractDB::Excel(_))
     }
+    */
 
     // pub fn is_none(&self) -> bool
     /// Checks if the current database is None.

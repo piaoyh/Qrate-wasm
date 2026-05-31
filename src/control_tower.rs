@@ -8,7 +8,8 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ QBDB, QBank, SBDB, SBank, SQLiteDB, Student, Question, Generator };
+use qrate::{ QBDB, QBank, SBDB, SBank, SQLiteDB, Student, Question, Generator,
+                SelfStudy, ScoringRule, UserAnswer };
 use crate::{ AbstractDB, ChoiceMark, NameId, QuestionData, ErrorMessage };
 
 
@@ -20,7 +21,7 @@ pub struct ControlTower
     student_db: AbstractDB,
     qbank: Option<QBank>,
     sbank: Option<SBank>,
-    generator: Option<Generator>,
+    self_study: Option<SelfStudy>,
 }
 
 #[wasm_bindgen]
@@ -30,7 +31,7 @@ impl ControlTower
     /// Creates a new instance of `ControlTower` with default values.
     /// 
     /// The `question_db` and `student_db` fields are initialized
-    /// to `AbstractDB::None`, and the `qbank`, `sbank`, and `generator`
+    /// to `AbstractDB::None`, and the `qbank`, `sbank`, and `self_study`
     /// fields are initialized to `None`.
     /// 
     /// # Returns
@@ -43,7 +44,7 @@ impl ControlTower
     /// assert!(control_tower.student_db.is_none());
     /// assert!(control_tower.qbank.is_none());
     /// assert!(control_tower.sbank.is_none());
-    /// assert!(control_tower.generator.is_none());
+    /// assert!(control_tower.self_study.is_none());
     /// ```
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self
@@ -54,7 +55,7 @@ impl ControlTower
             student_db: AbstractDB::None,
             qbank: None,
             sbank: None,
-            generator: None,
+            self_study: None,
         }
     }
 
@@ -347,16 +348,12 @@ impl ControlTower
     /// Returns the question data from question bank (QBank)
     /// for the specified question number.
     /// 
-    /// This method returns the question data from question bank (QBank)
-    /// for the specified question number. If the `Generator` instance is not
-    /// initialized, it returns `None`.
-    /// 
     /// # Arguments
     /// * `num` - The question number to retrieve.
     /// 
     /// # Returns
     /// - `Some(QuestionData)` if the question data is retrieved successfully.
-    /// - `None` if the `Generator` instance is not initialized.
+    /// - `None` if the QBank is not loaded.
     /// 
     /// # Examples
     /// ```
@@ -1409,7 +1406,7 @@ impl ControlTower
     // pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
     /// Starts a self-study session with the specified parameters.
     /// 
-    /// This method creates a `Generator` instance using the loaded QBank and
+    /// This method creates a `SelfStudy` instance using the loaded QBank and
     /// starts the self-study session with the specified parameters.
     /// 
     /// If the QBank is not loaded, it returns `false`.
@@ -1430,9 +1427,8 @@ impl ControlTower
             let mut seed_array = [0u64; 16];
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
-            // 아무 문제도 만들어지지 않음. 여기가 문제임
-            self.generator = Generator::new_one_set_with_seeds(qbank, start, end, number_of_questions as usize, seed_array);
-            return self.generator.is_some();
+            self.self_study = SelfStudy::new(qbank, start, end, number_of_questions as usize, seed_array);
+            return self.self_study.is_some();
         }
         false
     }
@@ -1441,12 +1437,12 @@ impl ControlTower
     /// Returns the number of questions in the self-study session.
     /// 
     /// This method returns the number of questions in the self-study session
-    /// from the `Generator` instance. If the `Generator` instance is not
+    /// from the `SelfStudy` instance. If the `SelfStudy` instance is not
     /// initialized, it returns `0`.
     /// 
     /// # Returns
     /// - The number of questions in the self-study session.
-    /// - `0` if the `Generator` instance is not initialized.
+    /// - `0` if the `SelfStudy` instance is not initialized.
     /// 
     /// # Examples
     /// ```
@@ -1457,8 +1453,8 @@ impl ControlTower
     /// ```
     pub fn get_self_study_number_of_questions(&self) -> u16
     {
-        if let Some(g) = &self.generator
-            { g.get_number_of_questions() as u16 }
+        if let Some(ss) = &self.self_study
+            { ss.get_number_of_questions() as u16 }
         else
             { 0 }
     }
@@ -1467,7 +1463,7 @@ impl ControlTower
     /// Returns the question data for the specified question number.
     /// 
     /// This method returns the question data for the specified question number
-    /// from the `Generator` instance. If the `Generator` instance is not
+    /// from the `SelfStudy` instance. If the `SelfStudy` instance is not
     /// initialized, it returns `None`.
     /// 
     /// # Arguments
@@ -1475,7 +1471,7 @@ impl ControlTower
     /// 
     /// # Returns
     /// - `Some(QuestionData)` if the question data is retrieved successfully.
-    /// - `None` if the `Generator` instance is not initialized.
+    /// - `None` if the `SelfStudy` instance is not initialized.
     /// 
     /// # Examples
     /// ```
@@ -1488,14 +1484,13 @@ impl ControlTower
     /// ```
     pub fn get_self_study_question(&mut self, num: u16) -> Option<QuestionData>
     {
-        if let Some(generator) = &mut self.generator
+        if let Some(ss) = &mut self.self_study
         {
-            if let Some((num, cat_id, cat_str, question, choices)) = generator.get_question_by_number(num)
+            if let Some((num, cat_id, cat_str, question, choices)) = ss.get_question_by_number(num)
             {
                 let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
                 for (c_text, c_correct) in choices
                     { qdata.push_choice(c_text, c_correct); }
-                // generator.set_current_question_number(num);
                 return Some(qdata);
             }
         }
@@ -1506,12 +1501,12 @@ impl ControlTower
     /// Returns the next question data in the self-study session.
     /// 
     /// This method returns the next question data in the self-study session
-    /// from the `Generator` instance. If the `Generator` instance is not
+    /// from the `SelfStudy` instance. If the `SelfStudy` instance is not
     /// initialized, it returns `None`.
     /// 
     /// # Returns
     /// - `Some(QuestionData)` if the next question data is retrieved successfully.
-    /// - `None` if the `Generator` instance is not initialized.
+    /// - `None` if the `SelfStudy` instance is not initialized.
     /// 
     /// # Examples
     /// ```
@@ -1524,9 +1519,9 @@ impl ControlTower
     /// ```
     pub fn get_next_self_study_question(&mut self) -> Option<QuestionData>
     {
-        if let Some(g) = &mut self.generator
+        if let Some(ss) = &mut self.self_study
         {
-            if let Some((num, cat_id, cat_str, question, choices)) = g.next()
+            if let Some((num, cat_id, cat_str, question, choices)) = ss.next()
             {
                 let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
                 for (c_text, c_correct) in choices
@@ -1541,12 +1536,12 @@ impl ControlTower
     /// Returns the previous question data in the self-study session.
     /// 
     /// This method returns the previous question data in the self-study session
-    /// from the `Generator` instance. If the `Generator` instance is not
+    /// from the `SelfStudy` instance. If the `SelfStudy` instance is not
     /// initialized, it returns `None`.
     /// 
     /// # Returns
     /// - `Some(QuestionData)` if the previous question data is retrieved successfully.
-    /// - `None` if the `Generator` instance is not initialized.
+    /// - `None` if the `SelfStudy` instance is not initialized.
     /// 
     /// # Examples
     /// ```
@@ -1559,9 +1554,9 @@ impl ControlTower
     /// ```
     pub fn get_prev_self_study_question(&mut self) -> Option<QuestionData>
     {
-        if let Some(g) = &mut self.generator
+        if let Some(ss) = &mut self.self_study
         {
-            if let Some((num, cat_id, cat_str, question, choices)) = g.prev()
+            if let Some((num, cat_id, cat_str, question, choices)) = ss.prev()
             {
                 let mut qdata = QuestionData::new(num, cat_id, cat_str, question);
                 for (c_text, c_correct) in choices
@@ -1570,5 +1565,34 @@ impl ControlTower
             }
         }
         None
+    }
+
+    pub fn set_self_study_scoring_rule(&mut self, rule: String)
+    {
+        if let Some(ss) = &mut self.self_study
+            { ss.set_scoring_rule(ScoringRule::from_str(&rule)); }
+    }
+
+    pub fn set_self_study_choices_answer(&mut self, num: u16, answers: Vec<u8>)
+    {
+        if let Some(ss) = &mut self.self_study
+        {
+            let bool_answers = answers.into_iter().map(|v| v != 0).collect();
+            ss.set_answer(num, UserAnswer::Choices(bool_answers));
+        }
+    }
+
+    pub fn set_self_study_short_answer(&mut self, num: u16, answer: String)
+    {
+        if let Some(ss) = &mut self.self_study
+            { ss.set_answer(num, UserAnswer::ShortAnswer(answer)); }
+    }
+
+    pub fn get_self_study_score(&self) -> f64
+    {
+        if let Some(ss) = &self.self_study
+            { ss.score() }
+        else
+            { 0.0 }
     }
 }
