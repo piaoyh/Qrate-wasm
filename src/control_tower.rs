@@ -59,6 +59,16 @@ impl ControlTower
         }
     }
 
+    /// Clears all database and bank data.
+    pub fn clear_all(&mut self)
+    {
+        self.question_db = AbstractDB::None;
+        self.student_db = AbstractDB::None;
+        self.qbank = None;
+        self.sbank = None;
+        self.self_study = None;
+    }
+
     // pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     /// Loads the question bank (QBank) from a byte slice
     /// containing SQLite database data.
@@ -94,6 +104,7 @@ impl ControlTower
     /// ```
     pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
+        self.clear_qbank();
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             self.qbank = db.read_qbank();
@@ -178,6 +189,7 @@ impl ControlTower
     /// ```
     pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
+        self.clear_sbank();
         if let Some(db) = SQLiteDB::open_in_memory(data)
         {
             self.sbank = db.read_sbank();
@@ -1104,7 +1116,7 @@ impl ControlTower
     /// // After loading an SBank with a student at index 0 with name "Alice" and ID "s123"
     /// // assert_eq!(control_tower.get_student(1), NameId::new("Alice".to_string(), "s123".to_string()));
     /// ```
-    pub fn get_student(&self, student_number: usize) -> NameId
+    pub fn get_student(&self, student_number: u16) -> NameId
     {
         if let Some(sbank) = &self.sbank
         {
@@ -1136,7 +1148,7 @@ impl ControlTower
     /// // After loading an SBank with a student at index 0
     /// // assert_eq!(control_tower.set_student(1, NameId::new("Alice".to_string(), "s123".to_string())), true);
     /// ```
-    pub fn set_student(&mut self, student_number: usize, name_id: NameId) -> bool
+    pub fn set_student(&mut self, student_number: u16, name_id: NameId) -> bool
     {
         match &mut self.sbank
         {
@@ -1389,8 +1401,8 @@ impl ControlTower
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
-    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
-    pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    #[wasm_bindgen]
+    pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, JsValue>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
@@ -1398,9 +1410,12 @@ impl ControlTower
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
             if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, seed_array)
-                { return g.export_shuffled_exams_in_pdf().map_err(|_| ErrorMessage::FailedToGenerateExam); }
+            {
+                return g.export_shuffled_exams_in_pdf()
+                    .map_err(|e| JsValue::from_str(&e));
+            }
         }
-        Err(ErrorMessage::FailedToGenerateExam)
+        Err(JsValue::from_str("FailedToGenerateExam"))
     }
 
     // pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool

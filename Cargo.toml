@@ -1,7 +1,7 @@
 [package]
 authors = ["PARK Youngho"]
 name = "qrate-wasm"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 keywords = ["quiz", "gui", "examination", "question", "teacher"]
 categories = ["algorithms", "data-structures", "database", "gui"]
@@ -16,7 +16,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 #qrate = { path = "../Qrate" }
-qrate = "0.11"
+qrate = "0.12"
 wasm-bindgen = "0.2"
 
 [package.metadata.docs.rs]
