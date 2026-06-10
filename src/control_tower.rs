@@ -1420,20 +1420,20 @@ impl ControlTower
     /// else
     ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
     /// ```
-    pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, seeds: &[u64]) -> Vec<u8>
+    pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, answer_sheet_title: String, seeds: &[u64]) -> Vec<u8>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
             let mut seed_array = [0u64; 16];
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
-            if let Some(g) = Generator::new_with_seeds(qbank, start, end, selected, sbank, seed_array)
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, selected, sbank, answer_sheet_title, seed_array)
                 { return g.export_shuffled_exams_in_txt(); }
         }
         Vec::new()
     }
 
-    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     /// Generates a shuffled exam in DOCX format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1449,6 +1449,7 @@ impl ControlTower
     /// * `end` - The ending group number for the exam generation.
     /// * `number_of_questions` - The number of questions to select
     ///   for each student.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet in the generated exam.
     /// * `seeds` - A seed array, each element of which is of u64.
     /// 
     /// # Returns
@@ -1460,25 +1461,25 @@ impl ControlTower
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// if let Ok(exam_data) = control_tower.generate_exam_in_docx(1, 5, 10)
+    /// if let Ok(exam_data) = control_tower.generate_exam_in_docx(1, 5, 10, "Answer Sheet".to_string(), &[0u64; 16])
     ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
-    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
             let mut seed_array = [0u64; 16];
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
-            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, seed_array)
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, answer_sheet_title, seed_array)
                 { return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessage::FailedToGenerateExam); }
         }
         Err(ErrorMessage::FailedToGenerateExam)
     }
 
-    // pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    // pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
     /// Generates a shuffled exam in PDF format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1494,6 +1495,7 @@ impl ControlTower
     /// * `end` - The ending group number for the exam generation.
     /// * `number_of_questions` - The number of questions to select
     ///   for each student.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet in the generated exam.
     /// * `seeds` - A seed array, each element of which is of u64.
     /// 
     /// # Returns
@@ -1505,20 +1507,21 @@ impl ControlTower
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// if let Ok(exam_data) = control_tower.generate_exam_in_pdf(1, 5, 10)
+    /// if let Ok(exam_data) = control_tower.generate_exam_in_pdf(1, 5, 10, "Answer Sheet".to_string(), &[0u64; 16])
     ///     { println!("Exam generated successfully, size: {}", exam_data.len()); }
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
     #[wasm_bindgen]
-    pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> Result<Vec<u8>, JsValue>
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, JsValue>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
             let mut seed_array = [0u64; 16];
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
-            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, seed_array)
+            if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, answer_sheet_title, seed_array)
             {
                 return g.export_shuffled_exams_in_pdf()
                     .map_err(|e| JsValue::from_str(&e));
@@ -1544,6 +1547,7 @@ impl ControlTower
     /// 
     /// # Returns
     /// - `true` if the self-study session is started successfully.
+    /// - `false` if the QBank is not loaded.
     pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
     {
         if let Some(qbank) = &self.qbank
