@@ -1388,7 +1388,7 @@ impl ControlTower
         self.student_db = AbstractDB::None;
     }
 
-    // pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, seeds:  &[u64]) -> Vec<u8>
+    // pub fn generate_exam_in_txt(&self, start: u16, end: u16, selected: usize, answer_sheet_title: String, seeds:  &[u64]) -> Vec<u8>
     /// Generates a shuffled exam in plain text format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1403,6 +1403,7 @@ impl ControlTower
     /// * `start` - The starting group number for the exam generation.
     /// * `end` - The ending group number for the exam generation.
     /// * `selected` - The number of questions to select for each student.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet in the generated exam.
     /// * `seeds` - A seed array, each element of which is of u64.
     /// 
     /// # Returns
@@ -1414,7 +1415,7 @@ impl ControlTower
     /// ```
     /// use qrate_wasm::ControlTower;
     /// let control_tower = ControlTower::new();
-    /// let exam_data = control_tower.generate_exam_in_txt(1, 5, 10);
+    /// let exam_data = control_tower.generate_exam_in_txt(1, 5, 10, "Answer Sheet".to_string(), &[0u64; 16]);
     /// if exam_data.is_empty()
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// else
