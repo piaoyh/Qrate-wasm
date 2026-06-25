@@ -105,9 +105,9 @@ impl ControlTower
     pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
         self.clear_qbank();
-        if let Some(db) = SQLiteDB::open_in_memory(data)
+        if let Ok(mut db) = SQLiteDB::open_in_memory(data)
         {
-            self.qbank = db.read_qbank();
+            self.qbank = db.read_qbank().ok();
             if let Some(qbank) = &self.qbank
             {
                 if qbank.is_higher_version()
@@ -145,7 +145,7 @@ impl ControlTower
         if let Some(qbank) = &mut self.qbank
         {
             qbank.determine_categories();
-            if let Some(mut db) = SQLiteDB::open_empty_in_memory()
+            if let Ok(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_qbank(qbank).is_ok()
                     { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteQBankToMemory); }
@@ -190,9 +190,9 @@ impl ControlTower
     pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
     {
         self.clear_sbank();
-        if let Some(db) = SQLiteDB::open_in_memory(data)
+        if let Ok(mut db) = SQLiteDB::open_in_memory(data)
         {
-            self.sbank = db.read_sbank();
+            self.sbank = db.read_sbank().ok();
             if let Some(sbank) = &self.sbank
             {
                 if sbank.is_higher_version()
@@ -229,7 +229,7 @@ impl ControlTower
     {
         if let Some(sbank) = &self.sbank
         {
-            if let Some(mut db) = SQLiteDB::open_empty_in_memory()
+            if let Ok(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_sbank(sbank).is_ok()
                     { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteSBankToMemory); }
