@@ -10,7 +10,7 @@
 pub mod control_tower;
 
 /// A module containing error messages that can occur in the Qrate application.
-pub mod error_messages;
+pub mod error_messages_for_wasm;
 
 /// A module defining an abstract database structure for storing questions and students.
 pub mod abstract_db;
@@ -25,7 +25,7 @@ pub mod name_id;
 pub mod question_data;
 
 pub use control_tower::ControlTower;
-pub use error_messages::ErrorMessage;
+pub use error_messages_for_wasm::ErrorMessageForWASM;
 pub use abstract_db::AbstractDB;
 pub use choice_mark::ChoiceMark;
 pub use name_id::NameId;

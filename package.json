@@ -1,6 +1,7 @@
 {
   "devDependencies": {
-    "@types/chrome": "^0.1.40"
+    "@types/chrome": "^0.1.40",
+    "wasm-pack": "^0.15.0"
   },
   "scripts": {
     "build:wasm": "wasm-pack build --target web --out-dir ../Extension/src/pkg && cp -r ../Extension/src/pkg/*.js ../Extension/src/pkg/*.wasm ../Extension/dist/pkg/"

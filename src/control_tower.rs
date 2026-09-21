@@ -9,8 +9,8 @@
 
 use wasm_bindgen::prelude::*;
 use qrate::{ QBDB, QBank, SBDB, SBank, SQLiteDB, Student, Question, Generator,
-                SelfStudy, ScoringRule, UserAnswer };
-use crate::{ AbstractDB, ChoiceMark, NameId, QuestionData, ErrorMessage };
+                SelfStudy, ScoringRule, UserAnswer, ErrorMessage };
+use crate::{ AbstractDB, ChoiceMark, NameId, QuestionData, ErrorMessageForWASM };
 
 
 
@@ -59,7 +59,22 @@ impl ControlTower
         }
     }
 
+    // pub fn clear_all(&mut self)
     /// Clears all database and bank data.
+    /// This method resets the `question_db` and `student_db` fields to `AbstractDB::None`,
+    /// and sets the `qbank`, `sbank`, and `self_study` fields to `None`.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// control_tower.clear_all();
+    /// assert!(control_tower.question_db.is_none());
+    /// assert!(control_tower.student_db.is_none());
+    /// assert!(control_tower.qbank.is_none());
+    /// assert!(control_tower.sbank.is_none());
+    /// assert!(control_tower.self_study.is_none());
+    /// ```
     pub fn clear_all(&mut self)
     {
         self.question_db = AbstractDB::None;
@@ -69,7 +84,7 @@ impl ControlTower
         self.self_study = None;
     }
 
-    // pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
+    // pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessageForWASM>
     /// Loads the question bank (QBank) from a byte slice
     /// containing SQLite database data.
     ///
@@ -86,7 +101,7 @@ impl ControlTower
     /// 
     /// # Returns
     /// - `Ok(())` on success
-    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// - `Err(ErrorMessageForWASM)` describing the failure on error.
     /// 
     /// # Examples
     /// ```
@@ -102,24 +117,91 @@ impl ControlTower
     ///     Err(e) => println!("Failed to load QBank: {:?}", e),
     /// }
     /// ```
-    pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
+    pub fn set_qbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessageForWASM>
     {
         self.clear_qbank();
-        if let Ok(mut db) = SQLiteDB::open_in_memory(data)
+        match SQLiteDB::open_in_memory(data)
         {
-            self.qbank = db.read_qbank().ok();
-            if let Some(qbank) = &self.qbank
-            {
-                if qbank.is_higher_version()
-                    { return Err(ErrorMessage::InvalidVersion); }
-                self.question_db = AbstractDB::SQLite(db);
-                return Ok(());
-            }
+            Ok(mut db) => self.read_qbank(&mut db),
+            Err(e) => self.return_when_error_occurs(e),
         }
-        Err(ErrorMessage::FailedToReceiveQBankFromMemory)
     }
 
-    // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    // fn read_qbank(&mut self, db: &mut SQLiteDB) -> Result<(), ErrorMessageForWASM>
+    /// Reads the question bank (QBank) from the provided SQLite database.
+    /// 
+    /// This method attempts to read the QBank from the provided SQLite database
+    /// and sets the `qbank` field of the `ControlTower` instance.
+    /// 
+    /// If successful, it returns `Ok(())`.
+    /// If it fails at any point, it returns an `Err` with an appropriate error.
+    /// 
+    /// # Arguments
+    /// * `db` - A mutable reference to the SQLite database to read the QBank from.
+    /// 
+    /// # Returns
+    /// - `Ok(())` on success
+    /// - `Err(ErrorMessageForWASM)` describing the failure on error.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// use qrate::SQLiteDB;
+    /// use std::fs;
+    /// 
+    /// let mut control_tower = ControlTower::new();
+    /// let data = fs::read("path_to_qbank.sqlite").expect("Failed to read file");
+    /// let mut db = SQLiteDB::open_in_memory(&data).expect("Failed to open database");
+    /// match control_tower.read_qbank(&mut db)
+    /// {
+    ///     Ok(()) => println!("QBank loaded successfully"),
+    ///     Err(e) => println!("Failed to load QBank: {:?}", e),
+    /// }
+    /// ```
+    fn read_qbank(&mut self, db: &mut SQLiteDB) -> Result<(), ErrorMessageForWASM>
+    {
+        match db.read_qbank()
+        {
+            Ok(qbank) => {
+                self.qbank = Some(qbank);
+                Ok(())
+            },
+            Err(e) => {
+                self.qbank = None;
+                Err(ErrorMessageForWASM::into_wasm(e))
+            },
+        }
+    }
+
+    // fn return_when_error_occurs(&mut self, e: ErrorMessage) -> Result<(), ErrorMessageForWASM>
+    /// Returns an `Err` with an appropriate error message.
+    /// 
+    /// This method sets the `qbank` field to `None` and returns an `Err`
+    /// with the appropriate error message.
+    /// 
+    /// # Arguments
+    /// * `e` - The error message to return.
+    /// 
+    /// # Returns
+    /// - `Err(ErrorMessageForWASM)` describing the failure on error.
+    /// 
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let mut control_tower = ControlTower::new();
+    /// match control_tower.return_when_error_occurs("Failed to load QBank")
+    /// {
+    ///     Err(e) => println!("Failed to load QBank: {}", e),
+    ///     Ok(()) => println!("QBank loaded successfully"),
+    /// }
+    /// ```
+    fn return_when_error_occurs(&mut self, e: ErrorMessage) -> Result<(), ErrorMessageForWASM>
+    {
+        self.qbank = None;
+        Err(ErrorMessageForWASM::into_wasm(e))
+    }
+    
+    // pub fn write_qbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessageForWASM>
     /// Writes the question bank (QBank) to a byte vector containing SQLite
     /// database data.
     /// 
@@ -128,7 +210,7 @@ impl ControlTower
     /// 
     /// # Returns
     /// - `Ok(Vec<u8>)` containing the SQLite database data on success
-    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// - `Err(ErrorMessageForWASM::FailedToWriteQBankToMemory)` describing the failure on error.
     /// 
     /// # Examples
     /// ```
@@ -140,21 +222,47 @@ impl ControlTower
     ///     Err(e) => println!("Failed to write QBank to bytes: {:?}", e),
     /// }
     /// ```
-    pub fn write_qbank_to_bytes_in_sqlite(&mut self) -> Result<Vec<u8>, ErrorMessage>
+    pub fn write_qbank_to_bytes_in_sqlite(&mut self) -> Result<Vec<u8>, ErrorMessageForWASM>
     {
-        if let Some(qbank) = &mut self.qbank
+        if self.qbank.is_some()
         {
-            qbank.determine_categories();
-            if let Ok(mut db) = SQLiteDB::open_empty_in_memory()
-            {
-                if db.write_qbank(qbank).is_ok()
-                    { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteQBankToMemory); }
-            }
+            self.qbank.as_mut().unwrap().determine_categories();
+            self.open_empty_in_memory()
         }
-        Err(ErrorMessage::FailedToWriteQBankToMemory)
+        else
+        {
+            Err(ErrorMessageForWASM::FailedToWriteQBankToMemory)
+        }
     }
 
-    // pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
+    fn open_empty_in_memory(&mut self) -> Result<Vec<u8>, ErrorMessageForWASM>
+    {
+        match &mut SQLiteDB::open_empty_in_memory()
+        {
+            Ok(db) => self.write_qbank(db),
+            Err(_) => Err(ErrorMessageForWASM::FailedToOpenEmptyQBankInMemory),
+        }
+    }
+
+    fn write_qbank(&mut self, db: &mut SQLiteDB) -> Result<Vec<u8>, ErrorMessageForWASM>
+    {
+        match db.write_qbank(self.qbank.as_ref().unwrap())
+        {
+            Ok(()) => self.save_qbank_in_memory(db),
+            Err(_) => Err(ErrorMessageForWASM::FailedToWriteQBank),
+        }
+    }
+
+    fn save_qbank_in_memory(&mut self, db: &mut SQLiteDB) -> Result<Vec<u8>, ErrorMessageForWASM>
+    {
+        match db.save_in_memory()
+        {
+            Ok(data) => Ok(data),
+            Err(_) => Err(ErrorMessageForWASM::FailedToWriteQBankToMemory)
+        }
+    }
+
+    // pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessageForWASM>
     /// Loads the student bank (SBank) from a byte slice
     /// containing SQLite database data.
     ///
@@ -170,8 +278,11 @@ impl ControlTower
     ///   for the student bank
     /// 
     /// # Returns
-    /// - `Ok(())` on success
-    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// * `Ok(())` on success,
+    /// * `Err(ErrorMessageForWASM::InvalidVersion)` when SBank is
+    ///   higher version,
+    /// * `Err(ErrorMessageForWASM::FailedToReceiveSBankFromMemory)` when faild
+    ///   in reading from memory.
     /// 
     /// # Examples
     /// ```
@@ -187,7 +298,7 @@ impl ControlTower
     ///     Err(e) => println!("Failed to load SBank: {:?}", e),
     /// }
     /// ```
-    pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessage>
+    pub fn set_sbank_from_bytes_in_sqlite(&mut self, data: &[u8]) -> Result<(), ErrorMessageForWASM>
     {
         self.clear_sbank();
         if let Ok(mut db) = SQLiteDB::open_in_memory(data)
@@ -196,15 +307,16 @@ impl ControlTower
             if let Some(sbank) = &self.sbank
             {
                 if sbank.is_higher_version()
-                    { return Err(ErrorMessage::InvalidVersion); }
+                    { return Err(ErrorMessageForWASM::InvalidVersion); }
                 self.student_db = AbstractDB::SQLite(db);
                 return Ok(());
             }
         }
-        Err(ErrorMessage::FailedToReceiveSBankFromMemory)
+        Err(ErrorMessageForWASM::FailedToReceiveSBankFromMemory)
     }
 
-    // pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+////////////////
+    // pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessageForWASM>
     /// Writes the student bank (SBank) to a byte vector containing SQLite
     /// database data.
     /// 
@@ -212,8 +324,9 @@ impl ControlTower
     /// and then saves the database to a byte vector.
     /// 
     /// # Returns
-    /// - `Ok(Vec<u8>)` containing the SQLite database data on success
-    /// - `Err(ErrorMessage)` describing the failure on error.
+    /// * `Ok(Vec<u8>)` containing the SQLite database data on success
+    /// * `Err(ErrorMessageForWASM::FailedToWriteSBankToMemory)` describing
+    ///   the failure on error.
     /// 
     /// # Examples
     /// ```
@@ -225,17 +338,17 @@ impl ControlTower
     ///     Err(e) => println!("Failed to write SBank to bytes: {:?}", e),
     /// }
     /// ```
-    pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessage>
+    pub fn write_sbank_to_bytes_in_sqlite(&self) -> Result<Vec<u8>, ErrorMessageForWASM>
     {
         if let Some(sbank) = &self.sbank
         {
             if let Ok(mut db) = SQLiteDB::open_empty_in_memory()
             {
                 if db.write_sbank(sbank).is_ok()
-                    { return db.save_in_memory().map_err(|_| ErrorMessage::FailedToWriteSBankToMemory); }
+                    { return db.save_in_memory().map_err(|_| ErrorMessageForWASM::FailedToWriteSBankToMemory); }
             }
         }
-        Err(ErrorMessage::FailedToWriteSBankToMemory)
+        Err(ErrorMessageForWASM::FailedToWriteSBankToMemory)
     }
 
     // pub fn push_an_empty_question(&mut self)
@@ -1434,7 +1547,7 @@ impl ControlTower
         Vec::new()
     }
 
-    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    // pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessageForWASM>
     /// Generates a shuffled exam in DOCX format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1456,7 +1569,7 @@ impl ControlTower
     /// # Returns
     /// - A `Result` containing a byte vector with the generated exam
     ///   in DOCX format if the QBank and SBank are loaded.
-    /// - `ErrorMessage::FailedToGenerateExam` if the QBank or SBank is not loaded.
+    /// - `ErrorMessageForWASM::FailedToGenerateExam` if the QBank or SBank is not loaded.
     /// 
     /// # Examples
     /// ```
@@ -1467,7 +1580,7 @@ impl ControlTower
     /// else
     ///     { println!("Failed to generate exam: QBank or SBank not loaded"); }
     /// ```
-    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    pub fn generate_exam_in_docx(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessageForWASM>
     {
         if let (Some(qbank), Some(sbank)) = (&self.qbank, &self.sbank)
         {
@@ -1475,12 +1588,12 @@ impl ControlTower
             for i in 0..16
                 { seed_array[i] = seeds[i]; }
             if let Some(g) = Generator::new_with_seeds(qbank, start, end, number_of_questions as usize, sbank, answer_sheet_title, seed_array)
-                { return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessage::FailedToGenerateExam); }
+                { return g.export_shuffled_exams_in_docx().map_err(|_| ErrorMessageForWASM::FailedToGenerateExam); }
         }
-        Err(ErrorMessage::FailedToGenerateExam)
+        Err(ErrorMessageForWASM::FailedToGenerateExam)
     }
 
-    // pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessage>
+    // pub fn generate_exam_in_pdf(&self, start: u16, end: u16, number_of_questions: u16, answer_sheet_title: String, seeds: &[u64]) -> Result<Vec<u8>, ErrorMessageForWASM>
     /// Generates a shuffled exam in PDF format based on the questions
     /// in the QBank and the students in the SBank.
     /// 
@@ -1502,7 +1615,7 @@ impl ControlTower
     /// # Returns
     /// - A `Result` containing a byte vector with the generated exam
     ///   in PDF format if the QBank and SBank are loaded.
-    /// - `ErrorMessage::FailedToGenerateExam` if the QBank or SBank is not loaded.
+    /// - `ErrorMessageForWASM::FailedToGenerateExam` if the QBank or SBank is not loaded.
     /// 
     /// # Examples
     /// ```
