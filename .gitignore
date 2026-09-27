@@ -1,4 +1,6 @@
+node_modules/
 target/
+pkg/
 .gemini_tmp/
 .vscode/
 .idea/
