@@ -1401,7 +1401,7 @@ impl ControlTower
     {
         match &self.qbank
         {
-            Some(qbank) => qbank.get_max_choices(),
+            Some(qbank) => qbank.get_max_choices_of_multiple_choice_questions(),
             None => 0
         }
     }
