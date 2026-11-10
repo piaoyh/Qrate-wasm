@@ -8,8 +8,9 @@
 
 
 use wasm_bindgen::prelude::*;
-use qrate::{ ErrorMessage, Generator, QBDB, QBank, Question, SBDB, SBank,
-                SQLiteDB, Excel, ScoringRule, SelfStudy, Student, UserAnswer };
+use qrate::{ ErrorMessage, Generator, QBankExporter, SBankExporter,
+                QBDB, QBank, Question, SBDB, SBank, Student,
+                SQLiteDB, Excel, ScoringRule, SelfStudy, UserAnswer };
 use crate::{ ChoiceMark, NameId, QuestionData, ErrorMessageForWASM };
 
 
@@ -2200,6 +2201,121 @@ impl ControlTower
             }
         }
         Err(JsValue::from_str("FailedToGenerateExam"))
+    }
+
+    // pub fn export_qbank_in_txt(&self) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded QBank in plain text format.
+    /// 
+    /// This method creates a `QBankExporter` instance using the loaded QBank
+    /// and calls its `export_qbank_in_txt()` method to export the QBank in
+    /// plain text format. The exported data is returned as a byte vector.
+    ///
+    /// If the QBank is not loaded, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `is_with_answer_sheet` - A boolean indicating whether to include
+    ///   the answer sheet in the export.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported QBank in plain text format
+    ///   if the QBank is loaded.
+    /// - `Err(JsValue)` with an error message if the QBank is not loaded.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_qbank_in_txt(true)
+    /// {
+    ///     Ok(data) => println!("QBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export QBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_qbank_in_txt(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        let text = exporter.export_qbank_in_txt(is_with_answer_sheet);
+        Ok(text)
+    }
+
+    // pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded QBank in DOCX format.
+    ///
+    /// This method creates a `QBankExporter` instance using the loaded QBank
+    /// and calls its `export_qbank_in_docx()` method to export the QBank in DOCX format. The exported data is returned as a byte vector.
+    ///
+    /// If the QBank is not loaded or the export fails, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `is_with_answer_sheet` - A boolean indicating whether to include
+    ///   the answer sheet in the export.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported QBank in DOCX format
+    ///   if the QBank is loaded and the export is successful.
+    /// - `Err(JsValue)` with an error message if the QBank is not loaded or the export fails.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_qbank_in_docx(true)
+    /// {
+    ///     Ok(data) => println!("QBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export QBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        match exporter.export_qbank_in_docx(is_with_answer_sheet)
+        {
+            Ok(text) => Ok(text),
+            Err(txt) => Err(JsValue::from_str(txt.as_str())),
+        }
+    }
+
+    // pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded QBank in PDF format.
+    ///
+    /// This method creates a `QBankExporter` instance using the loaded QBank
+    /// and calls its `export_qbank_in_pdf()` method to export the QBank in PDF format. The exported data is returned as a byte vector.
+    ///
+    /// If the QBank is not loaded or the export fails, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `is_with_answer_sheet` - A boolean indicating whether to include
+    ///   the answer sheet in the export.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported QBank in PDF format
+    ///   if the QBank is loaded and the export is successful.
+    /// - `Err(JsValue)` with an error message if the QBank is not loaded or the export fails.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_qbank_in_pdf(true)
+    /// {
+    ///     Ok(data) => println!("QBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export QBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        match exporter.export_qbank_in_pdf(is_with_answer_sheet)
+        {
+            Ok(text) => Ok(text),
+            Err(txt) => Err(JsValue::from_str(txt.as_str())),
+        }
     }
 
     // pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
