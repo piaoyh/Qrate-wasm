@@ -2203,7 +2203,7 @@ impl ControlTower
         Err(JsValue::from_str("FailedToGenerateExam"))
     }
 
-    // pub fn export_qbank_in_txt(&self) -> Result<Vec<u8>, JsValue>
+    // pub fn export_qbank_in_txt(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     /// Exports the loaded QBank in plain text format.
     /// 
     /// This method creates a `QBankExporter` instance using the loaded QBank
@@ -2215,6 +2215,8 @@ impl ControlTower
     /// # Arguments
     /// * `is_with_answer_sheet` - A boolean indicating whether to include
     ///   the answer sheet in the export.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet
+    ///   in the exported QBank.
     ///
     /// # Returns
     /// - `Ok(Vec<u8>)` containing the exported QBank in plain text format
@@ -2233,14 +2235,14 @@ impl ControlTower
     /// ```
     #[wasm_bindgen]
     #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
-    pub fn export_qbank_in_txt(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    pub fn export_qbank_in_txt(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     {
-        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), answer_sheet_title);
         let text = exporter.export_qbank_in_txt(is_with_answer_sheet);
         Ok(text)
     }
 
-    // pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    // pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     /// Exports the loaded QBank in DOCX format.
     ///
     /// This method creates a `QBankExporter` instance using the loaded QBank
@@ -2251,6 +2253,8 @@ impl ControlTower
     /// # Arguments
     /// * `is_with_answer_sheet` - A boolean indicating whether to include
     ///   the answer sheet in the export.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet
+    ///   in the exported QBank.
     ///
     /// # Returns
     /// - `Ok(Vec<u8>)` containing the exported QBank in DOCX format
@@ -2269,9 +2273,9 @@ impl ControlTower
     /// ```
     #[wasm_bindgen]
     #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
-    pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    pub fn export_qbank_in_docx(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     {
-        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), answer_sheet_title);
         match exporter.export_qbank_in_docx(is_with_answer_sheet)
         {
             Ok(text) => Ok(text),
@@ -2279,7 +2283,7 @@ impl ControlTower
         }
     }
 
-    // pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    // pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     /// Exports the loaded QBank in PDF format.
     ///
     /// This method creates a `QBankExporter` instance using the loaded QBank
@@ -2290,6 +2294,8 @@ impl ControlTower
     /// # Arguments
     /// * `is_with_answer_sheet` - A boolean indicating whether to include
     ///   the answer sheet in the export.
+    /// * `answer_sheet_title` - The title to be used for the answer sheet
+    ///   in the exported QBank.
     ///
     /// # Returns
     /// - `Ok(Vec<u8>)` containing the exported QBank in PDF format
@@ -2308,9 +2314,9 @@ impl ControlTower
     /// ```
     #[wasm_bindgen]
     #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
-    pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool) -> Result<Vec<u8>, JsValue>
+    pub fn export_qbank_in_pdf(&self, is_with_answer_sheet: bool, answer_sheet_title: String) -> Result<Vec<u8>, JsValue>
     {
-        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), "Answer Sheet".to_string());
+        let exporter = QBankExporter::new(self.qbank.clone().unwrap(), answer_sheet_title);
         match exporter.export_qbank_in_pdf(is_with_answer_sheet)
         {
             Ok(text) => Ok(text),
