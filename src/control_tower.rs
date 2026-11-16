@@ -2324,6 +2324,123 @@ impl ControlTower
         }
     }
 
+    //pub fn export_qbank_in_txt(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded SBank in plain text format.
+    /// 
+    /// This method creates a `SBankExporter` instance using the loaded QBank
+    /// and calls its `export_sbank_in_txt()` method to export the SBank in
+    /// plain text format. The exported data is returned as a byte vector.
+    ///
+    /// If the SBank is not loaded, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `student_list_title` - The title to be used for the student list
+    ///   in the exported SBank.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported SBank in plain text format
+    ///   if the QBank is loaded.
+    /// - `Err(JsValue)` with an error message if the QBank is not loaded.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_sbank_in_txt("Student List".to_string())
+    /// {
+    ///     Ok(data) => println!("SBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export SBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_sbank_in_txt(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = SBankExporter::new(self.sbank.clone().unwrap(), student_list_title);
+        let text = exporter.export_sbank_in_txt();
+        Ok(text)
+    }
+
+    // pub fn export_sbank_in_docx(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded SBank in DOCX format.
+    ///
+    /// This method creates a `SBankExporter` instance using the loaded SBank
+    /// and calls its `export_sbank_in_docx()` method to export the SBank in DOCX format.
+    /// The exported data is returned as a byte vector.
+    ///
+    /// If the SBank is not loaded or the export fails, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `student_list_title` - The title to be used for the student list
+    ///   in the exported SBank.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported SBank in DOCX format
+    ///   if the SBank is loaded and the export is successful.
+    /// - `Err(JsValue)` with an error message if the SBank is not loaded or the export fails.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_sbank_in_docx("Student List".to_string())
+    /// {
+    ///     Ok(data) => println!("SBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export SBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_sbank_in_docx(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = SBankExporter::new(self.sbank.clone().unwrap(), student_list_title);
+        match exporter.export_sbank_in_docx()
+        {
+            Ok(text) => Ok(text),
+            Err(txt) => Err(JsValue::from_str(txt.as_str())),
+        }
+    }
+
+    // pub fn export_qbank_in_pdf(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    /// Exports the loaded SBank in PDF format.
+    ///
+    /// This method creates a `SBankExporter` instance using the loaded SBank
+    /// and calls its `export_sbank_in_pdf()` method to export the SBank in PDF format.
+    /// The exported data is returned as a byte vector.
+    ///
+    /// If the SBank is not loaded or the export fails, it returns an error.
+    /// 
+    /// # Arguments
+    /// * `student_list_title` - The title to be used for the student list
+    ///   in the exported SBank.
+    ///
+    /// # Returns
+    /// - `Ok(Vec<u8>)` containing the exported SBank in PDF format
+    ///   if the SBank is loaded and the export is successful.
+    /// - `Err(JsValue)` with an error message if the SBank is not loaded or the export fails.
+    ///
+    /// # Examples
+    /// ```
+    /// use qrate_wasm::ControlTower;
+    /// let control_tower = ControlTower::new();
+    /// match control_tower.export_sbank_in_pdf("Student List".to_string())
+    /// {
+    ///     Ok(data) => println!("SBank exported successfully, size: {}", data.len()),
+    ///     Err(e) => println!("Failed to export SBank: {}", e.as_string().unwrap_or_else(|| "Unknown error".to_string())),
+    /// }
+    /// ```
+    #[wasm_bindgen]
+    #[cfg(any(target_arch = "wasm32", target_arch = "wasm64"))]
+    pub fn export_sbank_in_pdf(&self, student_list_title: String) -> Result<Vec<u8>, JsValue>
+    {
+        let exporter = SBankExporter::new(self.sbank.clone().unwrap(), student_list_title);
+        match exporter.export_sbank_in_pdf()
+        {
+            Ok(text) => Ok(text),
+            Err(txt) => Err(JsValue::from_str(txt.as_str())),
+        }
+    }
+
     // pub fn start_self_study(&mut self, start: u16, end: u16, number_of_questions: u16, seeds: &[u64]) -> bool
     /// Starts a self-study session with the specified parameters.
     /// 
